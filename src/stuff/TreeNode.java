@@ -153,6 +153,6 @@ public class TreeNode<E extends Comparable<E>>  {
         for (TreeNode<E> child: getChildren() ) {
             ipStrings.add(child.toString());
         }
-        return "(" + String.join(" ", ipStrings) + ")";
+        return "(" + String.join(" ", ipStrings) + ")"; // TODO: 18.02.22 make this seperate thingy
     }
 }

@@ -12,6 +12,7 @@ import static stuff.IP.REGEX_IP;
  * The type Network.
  */
 public class Network {
+    // TODO: 18.02.22 check for at least two matches within parenthesis
     // TODO: 18.02.22 nachgeschaut, dass überall objectreferenz/equals wie noetig verwendet wurde
     // TODO: 18.02.22 geschaut, was in Treenode kann
     // TODO: 18.02.22 look at codecoverage
