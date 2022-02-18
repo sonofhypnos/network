@@ -4,54 +4,100 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static stuff.IP.REGEX_IP;
 
 /**
  * The type Network.
  */
 public class Network {
+    // TODO: 18.02.22 nachgeschaut, dass überall objectreferenz/equals wie noetig verwendet wurde
+    // TODO: 18.02.22 geschaut, was in Treenode kann
+    // TODO: 18.02.22 look at codecoverage
+    // TODO: 18.02.22 koennen wir bei Add davon ausgehen, dass das subnetz legal ist? Wie groß dürfen die
+    // überschneidungen der Verbindungen sein?
 
-    private TreeNode<IP> root;
-    public static final String REGEX_NODE = IP.REGEX_IP + "|(" + IP.REGEX_IP + ")*";
-
-
+    private List<TreeNode<IP>> roots;
+    /**
+     * The constant REGEX_NODE.
+     */
+    public static final String REGEX_NODE = REGEX_IP + "|(" + REGEX_IP + ")+"; // TODO: 18.02.22 do we need this
+    // second part?
 
     /**
      * Instantiates a new Network.
      *
      * @param root     the root
      * @param children the children
+     * @throws ParseException the parse exception
      */
-    public Network(final IP root, final List<IP> children) {
-        // TODO: 16.02.22 implement
+    public Network(final IP root, final List<IP> children) throws ParseException {
+        // TODO: 16.02.22 find a more elegant solution where it's obvious which elements get changed? (make parent
+        //  part of arguments?
+
+        this.roots = new ArrayList<>();
+        TreeNode<IP> rootNode = new TreeNode<>(root, null);
+        this.roots.add(new TreeNode<>(root,null));
+        for (IP child : children) {
+            addNewNode(child, rootNode);
+        }
+        if (!rootNode.isTree()) {
+            throw new RuntimeException("There is a loop in this Tree!");
+        }
+
     }
 
+
+    /**
+     * Parse network tree node.
+     *
+     * @param bracketNotation the bracket notation
+     * @return the tree node
+     * @throws ParseException the parse exception
+     */
     public static TreeNode<IP> parseNetwork(final String bracketNotation) throws ParseException {
         return parseNetwork(bracketNotation, null);
     }
 
+    /**
+     * Parse network tree node.
+     *
+     * @param bracketNotation the bracket notation
+     * @param parent          the parent
+     * @return the tree node
+     * @throws ParseException the parse exception
+     */
     public static TreeNode<IP> parseNetwork(final String bracketNotation, TreeNode<IP> parent) throws ParseException {
         // TODO: 17.02.22 check that at least one Node
         // TODO: 17.02.22 check how the rules handle whitespace in general
         // TODO: 17.02.22 is there an easy way to do substitution in java? that way we could substitute all the
         //  strings that are inside of parenthesis.
-        if (bracketNotation.charAt(1) == '(' && bracketNotation.charAt(bracketNotation.length() - 1) == ')') {
+        if (bracketNotation.charAt(0) == '(' && bracketNotation.charAt(bracketNotation.length() - 1) == ')') {
             String ipString = bracketNotation.substring(1, bracketNotation.length() - 1);
-            Pattern nodePattern = Pattern.compile(REGEX_NODE);
+            Pattern nodePattern = Pattern.compile(REGEX_IP); // TODO: 18.02.22 rename ipk?
             Matcher nodeMatcher = nodePattern.matcher(ipString);
             List<String> nodeStrings = new ArrayList<>();
+            // TODO: 18.02.22 figure out how not to match empty strings (and make more robust in general?j
             while (nodeMatcher.find()){
                 nodeStrings.add(nodeMatcher.group());
             }
             TreeNode<IP> root = new TreeNode<>(new IP(nodeStrings.remove(0)), parent);
             //would have just used map here if java wasn't so annoying with exceptions in lambdas
             for (String nodeString : nodeStrings) {
-                parseNetwork(nodeString, parent);
+                parseNetwork(nodeString, root);
             }
             return root;
         }
-        return new TreeNode<>(new IP(bracketNotation), parent);
+        return addNewNode(new IP(bracketNotation), parent);
     }
 
+
+    private static TreeNode<IP> addNewNode(final IP ip, final TreeNode<IP> parent) {
+        TreeNode<IP> leaf = new TreeNode<>(ip, parent);
+        leaf.setLevel(0);
+        return leaf;
+    }
 
     /**
      * Instantiates a new Network.
@@ -61,11 +107,9 @@ public class Network {
      */
     public Network(final String bracketNotation) throws ParseException {
         // TODO: 16.02.22 implement
-        root = parseNetwork(bracketNotation);
-
+        this.roots = new ArrayList<>();
+        this.roots.add(parseNetwork(bracketNotation));
     }
-
-
 
 
     /**
@@ -75,7 +119,10 @@ public class Network {
      * @return the boolean
      */
     public boolean add(final Network subnet) {
-        // TODO: 16.02.22 implement 
+        // TODO: 16.02.22 implement
+        // TODO: 18.02.22 Is this new node only allowed to add nodes, or is the root replacing the old one?
+        // TODO: MUST both have an overlapping subnet? (must the resulting Tree have a strictly greater list than the
+        // other?
         return false;
     }
 
@@ -85,8 +132,7 @@ public class Network {
      * @return the list
      */
     public List<IP> list() {
-        // TODO: 16.02.22 implement 
-        return null;
+        return this.roots.stream().map(TreeNode::list).flatMap(List::stream).sorted().collect(Collectors.toList());
     }
 
     /**
@@ -97,7 +143,9 @@ public class Network {
      * @return the boolean
      */
     public boolean connect(final IP ip1, final IP ip2) {
-        // TODO: 16.02.22 implement 
+        // TODO: 16.02.22 implement
+        // TODO? is die richtung in die hinzugefügt wird egal?
+        // TODO: 17.02.22 What happens if the thing is nowhere connected?
         return false;
     }
 
@@ -120,8 +168,7 @@ public class Network {
      * @return the boolean
      */
     public boolean contains(final IP ip) {
-        //// TODO: 16.02.22 implement 
-        return false;
+        return list().contains(ip);
     }
 
     /**
@@ -131,8 +178,11 @@ public class Network {
      * @return the height
      */
     public int getHeight(final IP root) {
-        // // TODO: 16.02.22 implement 
-        return 0;
+        // // TODO: 16.02.22 check that this gets set properly
+        if (!list().contains(root)) {
+            return 0;
+        }
+        return getNode(root).getLevel();
     }
 
     /**
@@ -142,7 +192,40 @@ public class Network {
      * @return the levels
      */
     public List<List<IP>> getLevels(final IP root) {
-        // TODO: 16.02.22 implement 
+        // TODO: 16.02.22 implement
+        return null;
+    }
+
+    private TreeNode<IP> getNode(IP ip){
+        // TODO: 18.02.22 figure out what to do when assertion is violated
+        // TODO: 18.02.22 figure out whether we want to have copy or not?
+        //currently returns null if not found
+        // TODO: 18.02.22 make this work: assert root.list().contains(ip);
+        for (TreeNode<IP> root: roots) {
+            TreeNode<IP> currentNode = getNode(ip, root);
+            if (currentNode != null) {
+                return currentNode;
+            }
+        }
+        return null;
+    }
+
+    private TreeNode<IP> getNode(IP ip, TreeNode<IP> currentNode){
+        // TODO: 18.02.22 implement breitensuche as well?
+        assert currentNode!=null;
+        if (currentNode.getValue().equals(ip)){
+            return currentNode;
+        }
+        if (!currentNode.getChildren().isEmpty()) {
+            for (TreeNode<IP> child: currentNode.getChildren()){
+                TreeNode<IP> childNode = getNode(ip, child);
+                if (childNode != null) {
+                    return childNode;
+                }
+
+            }
+
+        }
         return null;
     }
 
@@ -157,7 +240,8 @@ public class Network {
         // TODO: 16.02.22 implement 
         return null;
     }
-    
+
+
 
     /**
      * To string string.
@@ -166,9 +250,27 @@ public class Network {
      * @return the string
      */
     public String toString(IP root) {
-        return null;
+        // TODO: 17.02.22 Make case if root not in my nodes
+        // TODO: 18.02.22 find out what to return on error?
+        // TODO: 18.02.22 innterhalb der Klammerschreibweise nach Wert sortieren (breitensuche?)
+        if (getNode(root)==null) {
+            return "";
+        }
+        return getNode(root).toString();
+
     }
     // TODO: 16.02.22 Implement
 
+
+    @Override
+    public boolean equals(final Object o) {
+        // TODO: 18.02.22 Check this actually true
+        // implement by comparing all roots
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Network network = (Network) o;
+        //return roots.stream().allMatch(x -> )
+        return false;
+    }
 
 }

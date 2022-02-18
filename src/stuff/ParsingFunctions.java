@@ -25,7 +25,6 @@ public class ParsingFunctions {
         Pattern ipPattern = Pattern.compile(REGEX_IP);
         Matcher ipMatcher = ipPattern.matcher(ipString);
         return null;
-
     }
 
 }
