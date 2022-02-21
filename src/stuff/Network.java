@@ -126,6 +126,9 @@ public class Network {
         // TODO: MUST both have an overlapping subnet? (must the resulting Tree have a strictly greater list than the
         // TODO: 20.02.22 was ist wennn es keinen Overlap gibt?
         // other?
+        if (subnet == null) {
+            return false;
+        }
         UndirectedTree<IP> newGraph = this.graph.copy();
         List<List<IP>> newEdges = subnet.graph.getEdges();
         // TODO: 20.02.22 addStuff
@@ -219,7 +222,9 @@ public class Network {
      * @return the route
      */
     public List<IP> getRoute(final IP start, final IP end) {
-        // TODO: 16.02.22 implement
+        if (start == null || end == null) {
+            return new ArrayList<>();
+        }
         List<List<IP>> levels = getLevels(start);
         boolean connected = levels.stream().anyMatch((Collection<IP> level) -> level.contains(end));
 
