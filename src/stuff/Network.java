@@ -83,8 +83,7 @@ public class Network {
      * @return the tree node
      * @throws ParseException the parse exception
      */
-    public static UndirectedTree<IP> parseLispTree(final String bracketNotation, IP parent, UndirectedTree<IP> graph)
-            throws ParseException {
+    public static UndirectedTree<IP> parseLispTree(final String bracketNotation, IP parent, UndirectedTree<IP> graph) throws ParseException {
         // TODO: 17.02.22 check that at least one Node
         // TODO: 17.02.22 check how the rules handle whitespace in general
         // TODO: 17.02.22 is there an easy way to do substitution in java? that way we could substitute all the
@@ -211,6 +210,9 @@ public class Network {
      * @return the list
      */
     List<List<IP>> getLevels(final IP root) {
+        if (root == null) {
+            return new ArrayList<>();
+        }
         return graph.copy().getLevels(root);
     }
 
@@ -234,7 +236,7 @@ public class Network {
         // Since graph is a tree, the "end"-node only has one parent, which must be on the level above "end" in the
         // tree. We therefore find the route by going through the lineage of "end's" ancestors.
         while (!levels.get(levels.size() - 1).contains(end)) {
-            levels.remove(levels.size() -1);
+            levels.remove(levels.size() - 1);
         }
         List<IP> route = new ArrayList<>();
         route.add(end);
@@ -243,9 +245,7 @@ public class Network {
             IP currentIP = end;
         };
         for (int i = levels.size() - 2; i >= 0; i--) { // TODO: 19.02.22 don't get burned for this again
-            List<IP> connectedNodes = levels.get(i).stream()
-                    .filter((IP potentialParent) -> graph.get(potentialParent).contains(ref.currentIP))
-                    .collect(Collectors.toList());
+            List<IP> connectedNodes = levels.get(i).stream().filter((IP potentialParent) -> graph.get(potentialParent).contains(ref.currentIP)).collect(Collectors.toList());
             connectedNodes.retainAll(levels.get(i));
             IP parent = connectedNodes.get(0);
             route.add(parent);

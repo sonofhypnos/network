@@ -126,5 +126,11 @@ public interface UndirectedTree <E> {
      */
     boolean isTree();
 
-    boolean equals(UndirectedTree<E> secondGraph);
+    /**
+     * Equals boolean.
+     *
+     * @param tree the second tree
+     * @return the boolean
+     */
+    boolean equals(UndirectedTree<E> tree);
 }

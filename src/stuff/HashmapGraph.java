@@ -3,7 +3,15 @@ package stuff;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * The type Hashmap graph.
+ *
+ * @param <E> the type parameter
+ */
 public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> {
+    /**
+     * The constant DIRECTED_EDGE_PER_EDGE.
+     */
     public static final int DIRECTED_EDGE_PER_EDGE = 2;
     /*
      * @project FinalAssignmentNoBloat
@@ -12,10 +20,18 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
 
     private HashMap<E, List<E>> edges;
 
+    /**
+     * Instantiates a new Hashmap graph.
+     *
+     * @param nodes the nodes
+     */
     public HashmapGraph(HashMap<E, List<E>> nodes) {
         this.edges = copyEdges(nodes);
     }
 
+    /**
+     * Instantiates a new Hashmap graph.
+     */
     public HashmapGraph() {
         this.edges = new HashMap<>();
     }
@@ -60,7 +76,8 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
     }
 
 
-    private List<List<E>> getLevelsRecursive(final Set<E> visited, final List<List<E>> levels) { // TODO: 20.02.22 what is final doing here?
+    private List<List<E>> getLevelsRecursive(final Set<E> visited, final List<List<E>> levels) {
+        // TODO: 20.02.22 what is final doing here?
         // TODO: 19.02.22 maybe be simplified with tree assumption
         List<E> lastNodes = levels.get(levels.size() - 1);
         List<E> newLevel = lastNodes.stream().flatMap((E x) ->
@@ -190,9 +207,7 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
             List<E> subgraph = new ArrayList<>(getConnected(currentRoot));
             nodes.removeAll(subgraph);
             // directed edges in both directions
-            this.edges.values().stream()
-                    .flatMap(x -> x.stream().filter(subgraph::contains)).count();
-          long subgraphEdgeNumber = (this.edges.values().stream()
+            long subgraphEdgeNumber = (this.edges.values().stream()
                   .flatMap(x -> x.stream().filter(subgraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
             // wedivide by 2 since we model
             // the undirected edges with 2 directed edges
@@ -205,11 +220,10 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
     }
 
     @Override
-    public boolean equals(final UndirectedTree<E> secondGraph) {
-        // TODO: 20.02.22 erlaubt Klasse für Equals zu prüfen oder interface so lassen?
-        if (this == secondGraph) return true;
+    public boolean equals(final UndirectedTree<E> tree) {
+        // TODO: 21.02.22 figure out if overloading is enough for tutors
         E root = this.list().get(0);
-        return this.getLevels(root).equals(secondGraph.getLevels(root));
+        return this.getLevels(root).equals(tree.getLevels(root));
     }
 
     @Override
