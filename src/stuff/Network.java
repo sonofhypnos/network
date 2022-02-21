@@ -9,6 +9,9 @@ import static stuff.IP.REGEX_IP;
 
 /**
  * The type Network.
+ *
+ * @author :Tassilo Neubauer
+ * @version : 1.0
  */
 public class Network {
     // TODO: 18.02.22 check for at least two matches within parenthesis
@@ -18,13 +21,11 @@ public class Network {
     // TODO: 18.02.22 koennen wir bei Add davon ausgehen, dass das subnetz legal ist? Wie groß dürfen die
     // überschneidungen der Verbindungen sein?
 
-    private SortedSet<Node<IP>> nodes;
-    private UndirectedTree graph;
-
     /**
      * The constant REGEX_NODE.
      */
     public static final String REGEX_NODE = REGEX_IP + "|(" + REGEX_IP + ")+"; // TODO: 18.02.22 do we need this
+    private UndirectedTree<IP> graph;
     // second part?
 
     /**
@@ -36,19 +37,30 @@ public class Network {
     public Network(final IP root, final List<IP> children) {
         // TODO: 16.02.22 find a more elegant solution where it's obvious which elements get changed? (make parent
         //  part of arguments?
-
-        this.nodes = new TreeSet<>();
-        Node<IP> rootNode = new Node<>(root);
-        this.nodes.add(new Node<>(root));
-        for (IP child : children) {
-            Node<IP> leaf = new Node<>(child);
-            leaf.addUndirectedEdge(rootNode);
+        if (root == null || children == null || children.contains(root)) {
+            // TODO: 20.02.22 benutze eigene Runtime-Exception?
+            // TODO: 20.02.22 Heist das wir sollen Runtime-Klasse verwenden, oder wir sollen eine eigene implementieren?
+            //  Für mich nonobvious
+            throw new RuntimeException("Given ... does not describe a Tree Topology");  // TODO: 19.02.22 pretty
         }
-        if (!rootNode.isDirected()) {
-            throw new RuntimeException("There is a loop in this Tree!");
+        this.graph = new HashmapGraph<>();
+        for (IP child : children) {
+            graph.add(root, child);
         }
     }
 
+
+    /**
+     * Instantiates a new Network.
+     *
+     * @param bracketNotation the bracket notation
+     * @throws ParseException the parse exception
+     */
+    public Network(final String bracketNotation) throws ParseException {
+        // TODO: 16.02.22 implement
+        this.graph = parseLispTree(bracketNotation);
+        assert this.graph.isTree();
+    }
 
     /**
      * Parse network tree node.
@@ -57,8 +69,9 @@ public class Network {
      * @return the tree node
      * @throws ParseException the parse exception
      */
-    public static IP parseLispTree(final String bracketNotation) throws ParseException {
-        return parseLispTree(bracketNotation, null);
+    public static UndirectedTree<IP> parseLispTree(final String bracketNotation) throws ParseException {
+        UndirectedTree<IP> graph = new HashmapGraph<>();
+        return parseLispTree(bracketNotation, null, graph);
     }
 
     /**
@@ -66,10 +79,12 @@ public class Network {
      *
      * @param bracketNotation the bracket notation
      * @param parent          the parent
+     * @param graph           the graph
      * @return the tree node
      * @throws ParseException the parse exception
      */
-    public static IP parseLispTree(final String bracketNotation, Node<IP> parent) throws ParseException {
+    public static UndirectedTree<IP> parseLispTree(final String bracketNotation, IP parent, UndirectedTree<IP> graph)
+            throws ParseException {
         // TODO: 17.02.22 check that at least one Node
         // TODO: 17.02.22 check how the rules handle whitespace in general
         // TODO: 17.02.22 is there an easy way to do substitution in java? that way we could substitute all the
@@ -82,35 +97,22 @@ public class Network {
             List<String> nodeStrings = new ArrayList<>();
 
             // TODO: 18.02.22 figure out how not to match empty strings (and make more robust in general?j
-            while (nodeMatcher.find()){
+            while (nodeMatcher.find()) {
                 nodeStrings.add(nodeMatcher.group());
             }
 
-            UndirectedTree graph = new HashmapGraph();
             IP root = new IP(nodeStrings.remove(0));
             graph.add(root, parent);
             //would have just used map here if java wasn't so annoying with exceptions in lambdas
             for (String nodeString : nodeStrings) {
-                parseLispTree(nodeString, root);
+                parseLispTree(nodeString, root, graph);
             }
-            return root;
+            return graph;
         }
         IP leaf = new IP(bracketNotation);
-        leaf.addUndirectedEdge(parent);
-        return leaf;
+        graph.add(leaf, parent);
+        return null;
     }
-
-    /**
-     * Instantiates a new Network.
-     *
-     * @param bracketNotation the bracket notation
-     * @throws ParseException the parse exception
-     */
-    public Network(final String bracketNotation) throws ParseException {
-        // TODO: 16.02.22 implement
-        this.graph = new HashmapGraph(new TreeSet<>().addAll(parseLispTree(bracketNotation).getConnected()));
-    }
-
 
     /**
      * Add boolean.
@@ -122,8 +124,20 @@ public class Network {
         // TODO: 16.02.22 implement
         // TODO: 18.02.22 Is this new node only allowed to add nodes, or is the root replacing the old one?
         // TODO: MUST both have an overlapping subnet? (must the resulting Tree have a strictly greater list than the
+        // TODO: 20.02.22 was ist wennn es keinen Overlap gibt?
         // other?
-        return false;
+        UndirectedTree<IP> newGraph = this.graph.copy();
+        List<List<IP>> newEdges = subnet.graph.getEdges();
+        // TODO: 20.02.22 addStuff
+        // TODO: 20.02.22 handle adding loop
+        for (List<IP> edge : newEdges) {
+            newGraph.add(edge.get(0), edge.get(1));
+        }
+        if (!newGraph.isTree() || this.graph.equals(newGraph)) {
+            return false;
+        }
+        this.graph = newGraph;
+        return true;
     }
 
     /**
@@ -132,7 +146,7 @@ public class Network {
      * @return the list
      */
     public List<IP> list() {
-        return this.nodes.stream().map(Node::list).flatMap(List::stream).sorted().collect(Collectors.toList());
+        return this.graph.list();
     }
 
     /**
@@ -157,8 +171,9 @@ public class Network {
      * @return the boolean
      */
     public boolean disconnect(final IP ip1, final IP ip2) {
-        // TODO: 16.02.22 implement 
-        return false;
+        // TODO: 19.02.22
+        // TODO: 19.02.22 remove stuff if shit gets real
+        return graph.disconnect(ip1, ip2);
     }
 
     /**
@@ -168,7 +183,7 @@ public class Network {
      * @return the boolean
      */
     public boolean contains(final IP ip) {
-        return this.nodes.stream().anyMatch((Node<IP> x) -> x.getValue() == ip);
+        return this.graph.contains(ip);
     }
 
     /**
@@ -182,7 +197,7 @@ public class Network {
         if (!list().contains(root)) {
             return 0;
         }
-        return getNode(root).getLevel();
+        return this.graph.getHeight(root);
     }
 
 
@@ -192,45 +207,8 @@ public class Network {
      * @param root the root
      * @return the list
      */
-    List<List<IP>> getLevels(final IP root){
-        final Set<IP> visited = new HashSet<>();
-        final Queue<IP> nextNodes = new LinkedList<>();
-        nextNodes.add(root);
-        final Map<String, String> parents = new HashMap<>();
-
-    }
-
-    private Node<IP> getNode(IP ip){
-        // TODO: 18.02.22 figure out what to do when assertion is violated
-        // TODO: 18.02.22 figure out whether we want to have copy or not?
-        //currently returns null if not found
-        // TODO: 18.02.22 make this work: assert root.list().contains(ip);
-        for (Node<IP> root: nodes) {
-            Node<IP> currentNode = getNode(ip, root);
-            if (currentNode != null) {
-                return currentNode;
-            }
-        }
-        return null;
-    }
-
-    private Node<IP> getNode(IP ip, Node<IP> currentNode){
-        // TODO: 18.02.22 implement breitensuche as well?
-        assert currentNode !=null;
-        if (currentNode.getValue().equals(ip)){
-            return currentNode;
-        }
-        if (!currentNode.getConnectedNodes().isEmpty()) {
-            for (Node<IP> child: currentNode.getConnectedNodes()){
-                Node<IP> childNode = getNode(ip, child);
-                if (childNode != null) {
-                    return childNode;
-                }
-
-            }
-
-        }
-        return null;
+    List<List<IP>> getLevels(final IP root) {
+        return graph.copy().getLevels(root);
     }
 
     /**
@@ -241,10 +219,37 @@ public class Network {
      * @return the route
      */
     public List<IP> getRoute(final IP start, final IP end) {
-        // TODO: 16.02.22 implement 
-        return null;
-    }
+        // TODO: 16.02.22 implement
+        List<List<IP>> levels = getLevels(start);
+        boolean connected = levels.stream().anyMatch((Collection<IP> level) -> level.contains(end));
 
+        if (!(graph.contains(start) && graph.contains(end) && connected)) {
+            return new ArrayList<>();
+        }
+        // Since graph is a tree, the "end"-node only has one parent, which must be on the level above "end" in the
+        // tree. We therefore find the route by going through the lineage of "end's" ancestors.
+        while (!levels.get(levels.size() - 1).contains(end)) {
+            levels.remove(levels.size() -1);
+        }
+        List<IP> route = new ArrayList<>();
+        route.add(end);
+        // TODO: 21.02.22 find better solution for this
+        var ref = new Object() {
+            IP currentIP = end;
+        };
+        for (int i = levels.size() - 2; i >= 0; i--) { // TODO: 19.02.22 don't get burned for this again
+            List<IP> connectedNodes = levels.get(i).stream()
+                    .filter((IP potentialParent) -> graph.get(potentialParent).contains(ref.currentIP))
+                    .collect(Collectors.toList());
+            connectedNodes.retainAll(levels.get(i));
+            IP parent = connectedNodes.get(0);
+            route.add(parent);
+            ref.currentIP = parent;
+        }
+        Collections.reverse(route); //we need to reverse the list since we've gone backward.
+        return route;
+        // TODO: 19.02.22 check if not in thingy
+    }
 
 
     /**
@@ -257,24 +262,40 @@ public class Network {
         // TODO: 17.02.22 Make case if root not in my nodes
         // TODO: 18.02.22 find out what to return on error?
         // TODO: 18.02.22 innterhalb der Klammerschreibweise nach Wert sortieren (breitensuche?)
-        if (getNode(root)==null) {
-            return "";
-        }
-        return getNode(root).toString();
-
+        UndirectedTree<IP> newGraph = this.graph.copy();
+        return toStringRecursive(root, newGraph);
     }
-    // TODO: 16.02.22 Implement
 
+    private String toStringRecursive(IP root, UndirectedTree<IP> newGraph) {
+        if (newGraph.get(root).size() == 0) {
+            return root.toString();
+        }
+        List<String> ipStrings = new ArrayList<>();
+        ipStrings.add(root.toString());
+
+        List<IP> children = newGraph.get(root);
+        Collections.sort(children);
+
+        for (IP child : children) {
+            newGraph.remove(root, child);
+            ipStrings.add(toStringRecursive(child, newGraph));
+        }
+        return "(" + String.join(" ", ipStrings) + ")"; // TODO: 18.02.22 make this seperate thingy
+    }
 
     @Override
     public boolean equals(final Object o) {
-        // TODO: 18.02.22 Check this actually true
-        // implement by comparing all roots
+        // TODO: 20.02.22 darf ich das mit Object?
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Network network = (Network) o;
-        //return roots.stream().allMatch(x -> )
-        return false;
+
+        IP root = list().get(0);
+        return this.getLevels(root).equals(network.getLevels(root));
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(graph);
+    }
 }
