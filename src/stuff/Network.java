@@ -24,9 +24,22 @@ public class Network {
     /**
      * The constant REGEX_NODE.
      */
-    public static final String REGEX_NODE = REGEX_IP + "|(" + REGEX_IP + ")+"; // TODO: 18.02.22 do we need this
-    private UndirectedTree<IP> graph;
-    // second part?
+    public static final char STARTING_CHAR = '(';
+    /**
+     * The constant END_CHAR.
+     */
+    public static final char END_CHAR = ')';
+    /**
+     * The constant REGEX_NODE.
+     */
+    public static final String REGEX_NODE = REGEX_IP + "|((?: " + REGEX_IP + " )+" + REGEX_IP + ")";
+    // TODO: 21.02.22 was after colon  
+    //
+    // TODO: 18.02.22 do
+    // we
+    // need this
+    private TreeTopology<IP> graph;
+    // ip2 part?
 
     /**
      * Instantiates a new Network.
@@ -41,7 +54,12 @@ public class Network {
             // TODO: 20.02.22 benutze eigene Runtime-Exception?
             // TODO: 20.02.22 Heist das wir sollen Runtime-Klasse verwenden, oder wir sollen eine eigene implementieren?
             //  Für mich nonobvious
-            throw new RuntimeException("Given ... does not describe a Tree Topology");  // TODO: 19.02.22 pretty
+            throw new RuntimeException("Given ... does not describe a valid Tree Topology");  // TODO: 19.02.22 pretty
+        }
+        if (children.size() != children.stream().distinct().count()) {
+            throw new RuntimeException("There are duplicate children");
+            // TODO: 21.02.22 make sure this is ok to throw? Maybe this was not explicitly mentioned?
+            // TODO: 21.02.22 Punkt am Ende vom Satz?
         }
         this.graph = new HashmapGraph<>();
         for (IP child : children) {
@@ -69,9 +87,9 @@ public class Network {
      * @return the tree node
      * @throws ParseException the parse exception
      */
-    public static UndirectedTree<IP> parseLispTree(final String bracketNotation) throws ParseException {
-        UndirectedTree<IP> graph = new HashmapGraph<>();
-        return parseLispTree(bracketNotation, null, graph);
+    public static TreeTopology<IP> parseLispTree(final String bracketNotation) throws ParseException {
+        TreeTopology<IP> graph = new HashmapGraph<>();
+        return parseLispTree(bracketNotation, null, graph, STARTING_CHAR, END_CHAR);
     }
 
     /**
@@ -80,16 +98,18 @@ public class Network {
      * @param bracketNotation the bracket notation
      * @param parent          the parent
      * @param graph           the graph
+     * @param startingChar    the starting char
+     * @param endChar         the end char
      * @return the tree node
      * @throws ParseException the parse exception
      */
-    public static UndirectedTree<IP> parseLispTree(final String bracketNotation, IP parent, UndirectedTree<IP> graph) throws ParseException {
+    public static TreeTopology<IP> parseLispTree(final String bracketNotation, IP parent, TreeTopology<IP> graph, char startingChar, char endChar) throws ParseException {
         // TODO: 17.02.22 check that at least one Node
         // TODO: 17.02.22 check how the rules handle whitespace in general
         // TODO: 17.02.22 is there an easy way to do substitution in java? that way we could substitute all the
         //  strings that are inside of parenthesis.
         // TODO: 18.02.22 refactor part for parsing IP
-        if (bracketNotation.charAt(0) == '(' && bracketNotation.charAt(bracketNotation.length() - 1) == ')') {
+        if (bracketNotation.charAt(0) == startingChar && bracketNotation.charAt(bracketNotation.length() - 1) == endChar) {
             String ipString = bracketNotation.substring(1, bracketNotation.length() - 1);
             Pattern nodePattern = Pattern.compile(REGEX_IP); // TODO: 18.02.22 rename ipk?
             Matcher nodeMatcher = nodePattern.matcher(ipString);
@@ -104,7 +124,7 @@ public class Network {
             graph.add(root, parent);
             //would have just used map here if java wasn't so annoying with exceptions in lambdas
             for (String nodeString : nodeStrings) {
-                parseLispTree(nodeString, root, graph);
+                parseLispTree(nodeString, root, graph, startingChar, endChar);
             }
             return graph;
         }
@@ -120,7 +140,6 @@ public class Network {
      * @return the boolean
      */
     public boolean add(final Network subnet) {
-        // TODO: 16.02.22 implement
         // TODO: 18.02.22 Is this new node only allowed to add nodes, or is the root replacing the old one?
         // TODO: MUST both have an overlapping subnet? (must the resulting Tree have a strictly greater list than the
         // TODO: 20.02.22 was ist wennn es keinen Overlap gibt?
@@ -128,7 +147,8 @@ public class Network {
         if (subnet == null) {
             return false;
         }
-        UndirectedTree<IP> newGraph = this.graph.copy();
+        TreeTopology<IP> newGraph = this.graph.copy();
+        // TODO: 21.02.22 figure out why on earth this assignment works? Isn't graph private?
         List<List<IP>> newEdges = subnet.graph.getEdges();
         // TODO: 20.02.22 addStuff
         // TODO: 20.02.22 handle adding loop
@@ -162,7 +182,10 @@ public class Network {
         // TODO: 16.02.22 implement
         // TODO? is die richtung in die hinzugefügt wird egal?
         // TODO: 17.02.22 What happens if the thing is nowhere connected?
-        return false;
+        if (ip1 == null || ip2 == null || ip1.equals(ip2)) {
+            return false;
+        }
+        return this.graph.add(ip1, ip2);
     }
 
     /**
@@ -267,11 +290,11 @@ public class Network {
         // TODO: 17.02.22 Make case if root not in my nodes
         // TODO: 18.02.22 find out what to return on error?
         // TODO: 18.02.22 innterhalb der Klammerschreibweise nach Wert sortieren (breitensuche?)
-        UndirectedTree<IP> newGraph = this.graph.copy();
+        TreeTopology<IP> newGraph = this.graph.copy();
         return toStringRecursive(root, newGraph);
     }
 
-    private String toStringRecursive(IP root, UndirectedTree<IP> newGraph) {
+    private String toStringRecursive(IP root, TreeTopology<IP> newGraph) {
         if (newGraph.get(root).size() == 0) {
             return root.toString();
         }

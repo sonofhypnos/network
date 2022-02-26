@@ -7,7 +7,7 @@ import java.util.*;
  *
  * @param <E> the type parameter
  */
-public interface UndirectedTree <E> {
+public interface TreeTopology<E> {
     // TODO: 20.02.22 rename undirected Trees?
     // TODO: 20.02.22 rename Treetopology?
     // TODO: 20.02.22 maybe mention the fact this isn't a real tree?
@@ -24,7 +24,7 @@ public interface UndirectedTree <E> {
      *
      * @return the undirected tree
      */
-    UndirectedTree<E> copy();
+    TreeTopology<E> copy();
 
     /**
      * Gets levels.
@@ -49,24 +49,6 @@ public interface UndirectedTree <E> {
      * @return the list
      */
     List<E> list();
-
-    /**
-     * Add boolean.
-     *
-     * @param tree the tree
-     * @return the boolean
-     */
-    boolean add(UndirectedTree<E> tree);
-
-
-    /**
-     * Connect boolean.
-     *
-     * @param a the a
-     * @param b the b
-     * @return the boolean
-     */
-    boolean connect(final E a, final E b);
 
     /**
      * Disconnect boolean.
@@ -113,11 +95,11 @@ public interface UndirectedTree <E> {
 
     /**
      * Add.
-     *
-     * @param a the a
+     *  @param a the a
      * @param b the b
+     * @return
      */
-    void add(E a, E b);
+    boolean add(E a, E b);
 
     /**
      * Is tree boolean.
@@ -132,5 +114,5 @@ public interface UndirectedTree <E> {
      * @param tree the second tree
      * @return the boolean
      */
-    boolean equals(UndirectedTree<E> tree);
+    boolean equals(TreeTopology<E> tree);
 }

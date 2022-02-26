@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
  *
  * @param <E> the type parameter
  */
-public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> {
+public class HashmapGraph<E extends Comparable<E>> implements TreeTopology<E> {
     /**
      * The constant DIRECTED_EDGE_PER_EDGE.
      */
@@ -80,8 +80,7 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
         // TODO: 20.02.22 what is final doing here?
         // TODO: 19.02.22 maybe be simplified with tree assumption
         List<E> lastNodes = levels.get(levels.size() - 1);
-        List<E> newLevel = lastNodes.stream().flatMap((E x) ->
-                        this.edges.get(x).stream().filter((E y) -> !(visited.contains(y))))
+        List<E> newLevel = lastNodes.stream().flatMap((E x) -> this.edges.get(x).stream().filter((E y) -> !(visited.contains(y))))
                 .distinct().sorted().collect(Collectors.toList());
         if (newLevel.isEmpty()) {
             return levels;
@@ -108,23 +107,7 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
     }
 
     @Override
-    public boolean add(final UndirectedTree<E> tree) {
-        // TODO: 19.02.22
-        return false;
-    }
-
-    @Override
-    public boolean connect(final E a, final E b) {
-        // TODO: 19.02.22  
-        return false;
-    }
-
-    @Override
     public boolean disconnect(final E a, final E b) {
-        assert !(this.edges.keySet().size() < 2);
-        if (this.edges.keySet().size() == 2) { //last edge cannot be removed
-            return false;
-        }
         return remove(a, b);
     }
 
@@ -171,27 +154,25 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
     }
 
     @Override
-    public void add(final E first, final E second) {
+    public boolean add(final E first, final E second) {
         // TODO: 19.02.22 needs documentation that we modify state
         // TODO: 20.02.22 what if connection already exists? Do we keep quiet?
-        assert first != null;
-        //assert !first.equals(second); //why assert this? // TODO: 20.02.22 check if necessary
-        if (second == null) {
-            return;
-        }
         addOneDirection(first, second);
-        addOneDirection(second, first);
+        return addOneDirection(second, first);
     }
 
-    private void addOneDirection(final E first, final E second) {
+    private boolean addOneDirection(final E first, final E second) {
         if (edges.containsKey(first)) {
-            final List<E> oldEdge = edges.get(first);
-            if (!oldEdge.contains(second)) { //we only want to add the node if it is not already connected.
-                oldEdge.add(second);
-                return;
+            final List<E> connectedNodes = edges.get(first);
+            if (!connectedNodes.contains(second)) { //we only want to add the node if it is not already connected.
+                connectedNodes.add(second);
+                edges.put(first, connectedNodes);
+                return true;
             }
+            return false;
         } else {
             edges.put(first, new ArrayList<>(List.of(second)));
+            return true;
         }
     }
 
@@ -220,7 +201,7 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
     }
 
     @Override
-    public boolean equals(final UndirectedTree<E> tree) {
+    public boolean equals(final TreeTopology<E> tree) {
         // TODO: 21.02.22 figure out if overloading is enough for tutors
         E root = this.list().get(0);
         return this.getLevels(root).equals(tree.getLevels(root));
@@ -228,6 +209,7 @@ public class HashmapGraph<E extends Comparable<E>> implements UndirectedTree<E> 
 
     @Override
     public int hashCode() {
+        // TODO: do we need hashcodes?
         return Objects.hash(getEdges());
     }
 }

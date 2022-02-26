@@ -23,12 +23,15 @@ public class IP implements Comparable<IP> {
      */
     private static final int BLOCK_SIZE = 3;
     private static final int BLOCK_NUMBER = 4;
-    private static final int MAX_BLOCK_VALUE = 256;
+    private static final int PERIOD_NUMBER = BLOCK_NUMBER - 1;
+    private static final int BASE = 256;
+    private static final int MAX_BLOCK_VALUE = BASE- 1;
     private static final String REGEX_BLOCK = String.format("\\d{1,%s}", BLOCK_SIZE);
     /**
-     * The constant REGEX_IP.
+     * The Regex ip.
      */
-    public static final String REGEX_IP = String.format("((?:" + REGEX_BLOCK + "\\.){%s}\\d{1,%s})", BLOCK_NUMBER-1, BLOCK_SIZE);
+    protected static final String REGEX_IP = String.format("((?:" + REGEX_BLOCK + "\\.){%s}\\d{1,%s})", PERIOD_NUMBER,
+            BLOCK_SIZE);
 
     /**
      * The Blocks.
@@ -92,7 +95,7 @@ public class IP implements Comparable<IP> {
     protected int getIPValue() {
         long IPValue = 0;
         for (int i = 0; i < blocks.size(); i++) {
-            IPValue += pow(MAX_BLOCK_VALUE, i) * blocks.get(blocks.size() - i - 1);
+            IPValue += pow(BASE, i) * blocks.get(blocks.size() - i - 1);
         }
         return Math.toIntExact(IPValue + MIN_VALUE); //we add Min_value to make sure it fits into int
     }
