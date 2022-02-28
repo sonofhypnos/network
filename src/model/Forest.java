@@ -1,4 +1,4 @@
-package stuff;
+package model;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -8,14 +8,15 @@ import java.util.stream.Collectors;
  *
  * @param <E> the type parameter
  */
-public class HashmapGraph<E extends Comparable<E>> implements TreeTopology<E> {
+public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
     /**
-     * The constant DIRECTED_EDGE_PER_EDGE.
+     * The constant DIRECTED_EDGE_PER_EDGE. The number of direct edges in the directed interpretation of the graph used
+     * to model the undirected graph.
      */
     public static final int DIRECTED_EDGE_PER_EDGE = 2;
     /*
      * @project FinalAssignmentNoBloat
-     * @author Tassilo Neubauer
+     * @author upkim
      */
 
     private HashMap<E, List<E>> edges;
@@ -25,14 +26,14 @@ public class HashmapGraph<E extends Comparable<E>> implements TreeTopology<E> {
      *
      * @param nodes the nodes
      */
-    public HashmapGraph(HashMap<E, List<E>> nodes) {
+    public Forest(HashMap<E, List<E>> nodes) {
         this.edges = copyEdges(nodes);
     }
 
     /**
      * Instantiates a new Hashmap graph.
      */
-    public HashmapGraph() {
+    public Forest() {
         this.edges = new HashMap<>();
     }
 
@@ -56,15 +57,14 @@ public class HashmapGraph<E extends Comparable<E>> implements TreeTopology<E> {
         List<List<E>> edges = new ArrayList<>();
         HashMap<E, List<E>> newMap = getMap();
         for (E node : newMap.keySet()) {
-            edges.addAll(newMap.get(node).stream().map((E connectedNode) -> List.of(node, connectedNode))
-                    .collect(Collectors.toList()));
+            edges.addAll(newMap.get(node).stream().map((E connectedNode) -> List.of(node, connectedNode)).collect(Collectors.toList()));
         }
         return edges;
     }
 
     @Override
-    public HashmapGraph<E> copy() {
-        return new HashmapGraph<>(getMap());
+    public Forest<E> copy() {
+        return new Forest<>(getMap());
     }
 
     @Override
@@ -80,8 +80,9 @@ public class HashmapGraph<E extends Comparable<E>> implements TreeTopology<E> {
         // TODO: 20.02.22 what is final doing here?
         // TODO: 19.02.22 maybe be simplified with tree assumption
         List<E> lastNodes = levels.get(levels.size() - 1);
-        List<E> newLevel = lastNodes.stream().flatMap((E x) -> this.edges.get(x).stream().filter((E y) -> !(visited.contains(y))))
-                .distinct().sorted().collect(Collectors.toList());
+        // TODO: 28.02.22 use fold below: eg. reduce and then two functions??
+        List<E> newLevel = lastNodes.stream().flatMap((E x) -> this.edges.get(x).stream().filter((E y) ->
+                !(visited.contains(y)))).distinct().sorted().collect(Collectors.toList());
         if (newLevel.isEmpty()) {
             return levels;
         }
@@ -157,6 +158,9 @@ public class HashmapGraph<E extends Comparable<E>> implements TreeTopology<E> {
     public boolean add(final E first, final E second) {
         // TODO: 19.02.22 needs documentation that we modify state
         // TODO: 20.02.22 what if connection already exists? Do we keep quiet?
+        if (first == null || second == null) {
+            return false;
+        }
         addOneDirection(first, second);
         return addOneDirection(second, first);
     }
@@ -188,13 +192,15 @@ public class HashmapGraph<E extends Comparable<E>> implements TreeTopology<E> {
             List<E> subgraph = new ArrayList<>(getConnected(currentRoot));
             nodes.removeAll(subgraph);
             // directed edges in both directions
+            // TODO: 28.02.22 write this as seseparate function for each tree in forest?
             long subgraphEdgeNumber = (this.edges.values().stream()
-                  .flatMap(x -> x.stream().filter(subgraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
-            // wedivide by 2 since we model
-            // the undirected edges with 2 directed edges
+                    .flatMap(x -> x.stream().filter(subgraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
             if (subgraphEdgeNumber != subgraph.size() - 1) {
-                // See https://en.wikipedia.org/wiki/Tree_(graph_theory) for why this is equivalent to a tree
                 return false;
+                // See https://en.wikipedia.org/wiki/Tree_(graph_theory) for why this is equivalent to a tree.
+                // Intuitively, every edge connects a parent to a child. Since every child is connected to exactly one
+                // parent, the number of edges must be the number of children, which is the number of nodes minus the
+                // root node.
             }
         }
         return true;
@@ -204,7 +210,7 @@ public class HashmapGraph<E extends Comparable<E>> implements TreeTopology<E> {
     public boolean equals(final TreeTopology<E> tree) {
         // TODO: 21.02.22 figure out if overloading is enough for tutors
         E root = this.list().get(0);
-        return this.getLevels(root).equals(tree.getLevels(root));
+        return this.getLevels(root).equals(tree.getLevels(root)) && this.getEdges().size() == tree.getEdges().size();
     }
 
     @Override

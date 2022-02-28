@@ -1,16 +1,16 @@
-package stuff;
+package model;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static stuff.IP.REGEX_IP;
+import static model.IP.REGEX_IP;
 
 /**
  * The type Network.
  *
- * @author :Tassilo Neubauer
+ * @author :upkim
  * @version : 1.0
  */
 public class Network {
@@ -32,7 +32,7 @@ public class Network {
     /**
      * The constant REGEX_NODE.
      */
-    public static final String REGEX_NODE = REGEX_IP + "|((?: " + REGEX_IP + " )+" + REGEX_IP + ")";
+    public static final String REGEX_NODE = REGEX_IP + "|(\\((?:" + REGEX_IP + " )+" + REGEX_IP + "\\))";
     // TODO: 21.02.22 was after colon  
     //
     // TODO: 18.02.22 do
@@ -40,6 +40,16 @@ public class Network {
     // need this
     private TreeTopology<IP> graph;
     // ip2 part?
+    // TODO: 28.02.22 under all circumstances: Read instructions again for your assignments! There are some hints what makes you fail the course!
+    // TODO: 28.02.22 remove personal info unrelated to U-kürzel! (does that include git commits?)
+    // TODO: 28.02.22 ask forum: does linking wikipedia violate anything?
+    // TODO: 28.02.22 Jede Fehlermeldung muss aber mit Error ,
+    //beginnen und darf keine Sonderzeichen, wie beispielsweise Zeilenumbrüche oder Umlaute,
+    //enthalten.
+    // TODO: 28.02.22 make error messages to enum?
+    // TODO: 28.02.22 Ask if we can use the code from earlier years?
+    // TODO: 28.02.22 let Johannes look over my code
+
 
     /**
      * Instantiates a new Network.
@@ -61,7 +71,7 @@ public class Network {
             // TODO: 21.02.22 make sure this is ok to throw? Maybe this was not explicitly mentioned?
             // TODO: 21.02.22 Punkt am Ende vom Satz?
         }
-        this.graph = new HashmapGraph<>();
+        this.graph = new Forest<>();
         for (IP child : children) {
             graph.add(root, child);
         }
@@ -76,7 +86,7 @@ public class Network {
      */
     public Network(final String bracketNotation) throws ParseException {
         // TODO: 16.02.22 implement
-        this.graph = parseLispTree(bracketNotation);
+        this.graph = parseNetwork(bracketNotation);
         assert this.graph.isTree();
     }
 
@@ -87,9 +97,9 @@ public class Network {
      * @return the tree node
      * @throws ParseException the parse exception
      */
-    public static TreeTopology<IP> parseLispTree(final String bracketNotation) throws ParseException {
-        TreeTopology<IP> graph = new HashmapGraph<>();
-        return parseLispTree(bracketNotation, null, graph, STARTING_CHAR, END_CHAR);
+    public static TreeTopology<IP> parseNetwork(final String bracketNotation) throws ParseException {
+        TreeTopology<IP> graph = new Forest<>();
+        return parseNetwork(bracketNotation, null, graph, STARTING_CHAR, END_CHAR);
     }
 
     /**
@@ -103,7 +113,7 @@ public class Network {
      * @return the tree node
      * @throws ParseException the parse exception
      */
-    public static TreeTopology<IP> parseLispTree(final String bracketNotation, IP parent, TreeTopology<IP> graph, char startingChar, char endChar) throws ParseException {
+    public static TreeTopology<IP> parseNetwork(final String bracketNotation, IP parent, TreeTopology<IP> graph, char startingChar, char endChar) throws ParseException {
         // TODO: 17.02.22 check that at least one Node
         // TODO: 17.02.22 check how the rules handle whitespace in general
         // TODO: 17.02.22 is there an easy way to do substitution in java? that way we could substitute all the
@@ -111,7 +121,7 @@ public class Network {
         // TODO: 18.02.22 refactor part for parsing IP
         if (bracketNotation.charAt(0) == startingChar && bracketNotation.charAt(bracketNotation.length() - 1) == endChar) {
             String ipString = bracketNotation.substring(1, bracketNotation.length() - 1);
-            Pattern nodePattern = Pattern.compile(REGEX_IP); // TODO: 18.02.22 rename ipk?
+            Pattern nodePattern = Pattern.compile(REGEX_NODE); // TODO: 18.02.22 rename ipk?
             Matcher nodeMatcher = nodePattern.matcher(ipString);
             List<String> nodeStrings = new ArrayList<>();
 
@@ -124,7 +134,7 @@ public class Network {
             graph.add(root, parent);
             //would have just used map here if java wasn't so annoying with exceptions in lambdas
             for (String nodeString : nodeStrings) {
-                parseLispTree(nodeString, root, graph, startingChar, endChar);
+                parseNetwork(nodeString, root, graph, startingChar, endChar);
             }
             return graph;
         }
@@ -290,6 +300,9 @@ public class Network {
         // TODO: 17.02.22 Make case if root not in my nodes
         // TODO: 18.02.22 find out what to return on error?
         // TODO: 18.02.22 innterhalb der Klammerschreibweise nach Wert sortieren (breitensuche?)
+        if (!this.graph.contains(root)){
+            return "";
+        }
         TreeTopology<IP> newGraph = this.graph.copy();
         return toStringRecursive(root, newGraph);
     }
