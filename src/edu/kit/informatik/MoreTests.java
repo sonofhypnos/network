@@ -1,4 +1,4 @@
-package model;
+package edu.kit.informatik;
 
 
 import org.junit.jupiter.api.Assertions;

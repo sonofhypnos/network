@@ -1,11 +1,10 @@
-package model;
+package edu.kit.informatik;
+
+import model.TreeTopology;
+import resources.Errors;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import static model.IP.REGEX_IP;
 
 /**
  * The type Network.
@@ -14,6 +13,7 @@ import static model.IP.REGEX_IP;
  * @version : 1.0
  */
 public class Network {
+    // TODO: 05.03.22 add final keywords!
     // TODO: 18.02.22 check for at least two matches within parenthesis
     // TODO: 18.02.22 nachgeschaut, dass überall objectreferenz/equals wie noetig verwendet wurde
     // TODO: 18.02.22 geschaut, was in Treenode kann
@@ -24,23 +24,47 @@ public class Network {
     /**
      * The constant REGEX_NODE.
      */
-    public static final char STARTING_CHAR = '(';
+    public static final String PREFIX = "(";
     /**
      * The constant END_CHAR.
      */
-    public static final char END_CHAR = ')';
+    public static final String SUFFIX = ")";
     /**
      * The constant REGEX_NODE.
      */
-    public static final String REGEX_NODE = REGEX_IP + "|(\\((?:" + REGEX_IP + " )+" + REGEX_IP + "\\))";
-    // TODO: 21.02.22 was after colon  
+    public static final String REGEX_NODE = "\\(.*\\)";
+    /**
+     * The constant SEPARATION_STRING.
+     */
+    public static final String SEPARATION_STRING = " ";
+    /**
+     * The constant SEP_NUMBER.
+     */
+    public static final int SEP_NUMBER = 2; //that this value is 2 instead of 1 has to do with the peculiarities of
+    /**
+     * The constant THERE_IS_A_BRACKET_MISMATCH_IN_THE_PROVIDED_STRING.
+     */
+// the split-function separating the string n-1 times.
+    public static final String THERE_IS_A_BRACKET_MISMATCH_IN_THE_PROVIDED_STRING = "there is a parenthesis mismatch " + "in the" + " provided string";
+    /**
+     * The constant NETWORK_DOES_NOT_DESCRIBE_A_VALID_TREETOPOLOGY.
+     */
+    public static final String NETWORK_DOES_NOT_DESCRIBE_A_VALID_TREETOPOLOGY = "network does not describe a valid " + "Treetopology";
+    /**
+     * The constant SUFFIX_REGEX.
+     */
+    public static final String SUFFIX_REGEX = "\\)";
+    public static final String NETWORK_STRING_IS_NULL = "network string is null.";
+    public static final String NETWORK_STRING_IS_EMPTY = "network string is empty";
+    // TODO: 21.02.22 was after colon
     //
     // TODO: 18.02.22 do
     // we
     // need this
     private TreeTopology<IP> graph;
     // ip2 part?
-    // TODO: 28.02.22 under all circumstances: Read instructions again for your assignments! There are some hints what makes you fail the course!
+    // TODO: 28.02.22 under all circumstances: Read instructions again for your assignments! There are some hints
+    //  what makes you fail the course!
     // TODO: 28.02.22 remove personal info unrelated to U-kürzel! (does that include git commits?)
     // TODO: 28.02.22 ask forum: does linking wikipedia violate anything?
     // TODO: 28.02.22 Jede Fehlermeldung muss aber mit Error ,
@@ -86,62 +110,107 @@ public class Network {
      */
     public Network(final String bracketNotation) throws ParseException {
         // TODO: 16.02.22 implement
-        this.graph = parseNetwork(bracketNotation);
-        assert this.graph.isTree();
+        TreeTopology<IP> graph = new Forest<>();
+        this.graph = parseNetwork(bracketNotation, graph);
+        // TODO: 05.03.22 are we supposed to include assertions in code?
+        if (!(this.graph == null) && !this.graph.isForest()) { //connectedness is given through parsing;
+            throw new ParseException(String.format(NETWORK_DOES_NOT_DESCRIBE_A_VALID_TREETOPOLOGY));
+        }
     }
 
     /**
      * Parse network tree node.
      *
      * @param bracketNotation the bracket notation
+     * @param graph           the graph
      * @return the tree node
      * @throws ParseException the parse exception
      */
-    public static TreeTopology<IP> parseNetwork(final String bracketNotation) throws ParseException {
-        TreeTopology<IP> graph = new Forest<>();
-        return parseNetwork(bracketNotation, null, graph, STARTING_CHAR, END_CHAR);
+    public static TreeTopology<IP> parseNetwork(final String bracketNotation, final TreeTopology<IP> graph) throws ParseException {
+        // TODO: 05.03.22 document sideeffects
+        if (bracketNotation == null) {
+            throw new ParseException(NETWORK_STRING_IS_NULL);
+        }
+        if (bracketNotation.equals("")) {
+            throw new ParseException(NETWORK_STRING_IS_EMPTY);
+        }
+        if (!bracketNotation.endsWith(SUFFIX)) { // we check this here already so that in the recursive call it is
+            // guaranteed that the string ends in the suffix, thus we don't have to check in the recursive call for
+            // the suffix and for the end of the string separately.
+            throw new ParseException(Errors.S_NOT_NETWORK);
+        }
+        if (!parseNetwork(bracketNotation, null, graph).equals("")) {
+            throw new ParseException(THERE_IS_A_BRACKET_MISMATCH_IN_THE_PROVIDED_STRING);
+        }
+        return graph;
     }
 
     /**
-     * Parse network tree node.
+     * Parse network string.
      *
      * @param bracketNotation the bracket notation
      * @param parent          the parent
      * @param graph           the graph
-     * @param startingChar    the starting char
-     * @param endChar         the end char
-     * @return the tree node
+     * @return the string
      * @throws ParseException the parse exception
      */
-    public static TreeTopology<IP> parseNetwork(final String bracketNotation, IP parent, TreeTopology<IP> graph, char startingChar, char endChar) throws ParseException {
-        // TODO: 17.02.22 check that at least one Node
-        // TODO: 17.02.22 check how the rules handle whitespace in general
-        // TODO: 17.02.22 is there an easy way to do substitution in java? that way we could substitute all the
-        //  strings that are inside of parenthesis.
-        // TODO: 18.02.22 refactor part for parsing IP
-        if (bracketNotation.charAt(0) == startingChar && bracketNotation.charAt(bracketNotation.length() - 1) == endChar) {
-            String ipString = bracketNotation.substring(1, bracketNotation.length() - 1);
-            Pattern nodePattern = Pattern.compile(REGEX_NODE); // TODO: 18.02.22 rename ipk?
-            Matcher nodeMatcher = nodePattern.matcher(ipString);
-            List<String> nodeStrings = new ArrayList<>();
+    public static String parseNetwork(final String bracketNotation, IP parent, TreeTopology<IP> graph) throws ParseException {
+        if (bracketNotation.startsWith(PREFIX)) {
+            String ipString = bracketNotation.substring(PREFIX.length());
+            //remove prefix
+            // TODO: 05.03.22 use normal function to remove string
+            // TODO: 05.03.22 check that my string is never empty
+            IP root = null;
+            String node;
+            while (true) {
+                if (!ipString.contains(SEPARATION_STRING)) {
+                    return parseLast(graph, ipString, root);
+                }
+                String[] separatedString = ipString.split(SEPARATION_STRING, SEP_NUMBER);
+                node = separatedString[0];
+                ipString = separatedString[1];
+                if (root == null) {
+                    root = addChild(graph, parent, node);
+                } else if (node.startsWith(PREFIX)) {
+                    ipString = parseNetwork(node + SEPARATION_STRING + ipString, root, graph);
+                } else if (node.endsWith(SUFFIX)) {
+                    node = parseLast(graph, node, root);
+                    if (node.equals("")) {
+                        return ipString;
+                    }
+                    return node + SEPARATION_STRING + ipString;
 
-            // TODO: 18.02.22 figure out how not to match empty strings (and make more robust in general?j
-            while (nodeMatcher.find()) {
-                nodeStrings.add(nodeMatcher.group());
+                } else {
+                    addChild(graph, root, node);
+                }
             }
-
-            IP root = new IP(nodeStrings.remove(0));
-            graph.add(root, parent);
-            //would have just used map here if java wasn't so annoying with exceptions in lambdas
-            for (String nodeString : nodeStrings) {
-                parseNetwork(nodeString, root, graph, startingChar, endChar);
-            }
-            return graph;
         }
-        IP leaf = new IP(bracketNotation);
-        graph.add(leaf, parent);
-        return null;
+        throw new ParseException(THERE_IS_A_BRACKET_MISMATCH_IN_THE_PROVIDED_STRING);
     }
+
+    private static String parseLast(final TreeTopology<IP> graph, final String ipString, final IP root) throws ParseException {
+        String node;
+        String[] separatedSuffix = ipString.split(SUFFIX_REGEX, SEP_NUMBER);
+        node = separatedSuffix[0];
+        String newString = separatedSuffix[1];
+        if (!node.equals("")) {
+            addChild(graph, root, node);
+        }
+        return newString;
+    }
+
+    private static IP addChild(final TreeTopology<IP> graph, final IP root, final String node) throws ParseException {
+        IP child;
+        try {
+            child = new IP(node);
+            graph.add(child, root);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            throw new ParseException(e.getMessage());// TODO: 05.03.22 correct this exception
+        }
+        return child;
+    }
+
 
     /**
      * Add boolean.
@@ -165,7 +234,7 @@ public class Network {
         for (List<IP> edge : newEdges) {
             newGraph.add(edge.get(0), edge.get(1));
         }
-        if (!newGraph.isTree() || this.graph.equals(newGraph)) {
+        if (!newGraph.isForest() || this.graph.equals(newGraph)) {
             return false;
         }
         this.graph = newGraph;
@@ -300,7 +369,7 @@ public class Network {
         // TODO: 17.02.22 Make case if root not in my nodes
         // TODO: 18.02.22 find out what to return on error?
         // TODO: 18.02.22 innterhalb der Klammerschreibweise nach Wert sortieren (breitensuche?)
-        if (!this.graph.contains(root)){
+        if (!this.graph.contains(root)) {
             return "";
         }
         TreeTopology<IP> newGraph = this.graph.copy();

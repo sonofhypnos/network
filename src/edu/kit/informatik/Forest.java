@@ -1,4 +1,6 @@
-package model;
+package edu.kit.informatik;
+
+import model.TreeTopology;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,6 +16,7 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
      * to model the undirected graph.
      */
     public static final int DIRECTED_EDGE_PER_EDGE = 2;
+    public static final int MIN_NODES = 2;
     /*
      * @project FinalAssignmentNoBloat
      * @author upkim
@@ -81,8 +84,7 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
         // TODO: 19.02.22 maybe be simplified with tree assumption
         List<E> lastNodes = levels.get(levels.size() - 1);
         // TODO: 28.02.22 use fold below: eg. reduce and then two functions??
-        List<E> newLevel = lastNodes.stream().flatMap((E x) -> this.edges.get(x).stream().filter((E y) ->
-                !(visited.contains(y)))).distinct().sorted().collect(Collectors.toList());
+        List<E> newLevel = lastNodes.stream().flatMap((E x) -> this.edges.get(x).stream().filter((E y) -> !(visited.contains(y)))).distinct().sorted().collect(Collectors.toList());
         if (newLevel.isEmpty()) {
             return levels;
         }
@@ -182,25 +184,31 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
 
 
     @Override
-    public boolean isTree() {
+    public boolean isForest() {
         // TODO: 19.02.22 think about conserving this explicitly?
-        // TODO: 19.02.22 what if empty
-        // TODO: 20.02.22 write tests for isTree?
+        // TODO: 20.02.22 write tests for isForest?
         List<E> nodes = this.list();
+
+        if (nodes.size() < MIN_NODES) {
+            return false;
+        }
+
         while (!nodes.isEmpty()) {
             E currentRoot = nodes.get(0);
-            List<E> subgraph = new ArrayList<>(getConnected(currentRoot));
-            nodes.removeAll(subgraph);
-            // directed edges in both directions
-            // TODO: 28.02.22 write this as seseparate function for each tree in forest?
+            List<E> connectedSubGraph = new ArrayList<>(getConnected(currentRoot));
+            nodes.removeAll(connectedSubGraph);
+            // For every node, get the sum of the number of connected nodes
+            // which is equivalent to the number of directed edges,
+            // which is half the number of undirected edges.
             long subgraphEdgeNumber = (this.edges.values().stream()
-                    .flatMap(x -> x.stream().filter(subgraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
-            if (subgraphEdgeNumber != subgraph.size() - 1) {
+                    .flatMap(x -> x.stream().filter(connectedSubGraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
+
+            // For a graph to be a tree, it needs to be connected, and every child is connected to exactly one
+            // parent. Thus, the number of edges must be the number of children, which is the number of nodes
+            // minus the root node. As a formula |E| = |V| - 1.
+            boolean treePredicate = subgraphEdgeNumber == connectedSubGraph.size() - 1;
+            if (!treePredicate) { //if one connected subgraph is not a tree, we don't have a forest.
                 return false;
-                // See https://en.wikipedia.org/wiki/Tree_(graph_theory) for why this is equivalent to a tree.
-                // Intuitively, every edge connects a parent to a child. Since every child is connected to exactly one
-                // parent, the number of edges must be the number of children, which is the number of nodes minus the
-                // root node.
             }
         }
         return true;

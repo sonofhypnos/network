@@ -106,7 +106,7 @@ public interface TreeTopology<E> {
      *
      * @return the boolean
      */
-    boolean isTree();
+    boolean isForest();
 
     /**
      * Equals boolean.

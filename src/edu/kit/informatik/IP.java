@@ -1,4 +1,4 @@
-package model;
+package edu.kit.informatik;
 
 import resources.Errors;
 
@@ -64,7 +64,7 @@ public class IP implements Comparable<IP> {
         List<Integer> blocks = new ArrayList<>();
 
         if (!ipMatcher.matches()) {
-            throw new ParseException(String.format(Errors.S_DOES_NOT_FOLLOW_THE_FORMAT, ipString));
+            throw new ParseException(String.format(Errors.S_NOT_NETWORK, ipString));
         }
 
         if (zeroMatcher.matches()) {

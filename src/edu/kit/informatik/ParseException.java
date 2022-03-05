@@ -1,10 +1,10 @@
-package model;
+package edu.kit.informatik;
 
 /**
  * The type Parse exception.
  *
  */
-public class ParseException extends Exception {
+public class ParseException extends KitException {
     /**
      * Instantiates a new Parse exception.
      *
