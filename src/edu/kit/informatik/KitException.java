@@ -10,7 +10,7 @@ public abstract class KitException extends Exception {
     /**
      * The constant ERROR_PREFIX. Every Error must contain this prefix according to the programming assignment
      */
-    private static final String ERROR_PREFIX = "Error ";
+    private static final String ERROR_PREFIX = "Error, ";
 
     /**
      * Instantiates a new Kit exception with ERROR_PREFIX added.

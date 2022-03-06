@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import static java.lang.Integer.MIN_VALUE;
 import static java.lang.Integer.parseInt;
 import static java.lang.Math.pow;
+import static java.util.stream.Collectors.joining;
 
 /**
  * The type Ip.
@@ -27,13 +28,14 @@ public class IP implements Comparable<IP> {
     private static final int BLOCK_NUMBER = 4;
     private static final int PERIOD_NUMBER = BLOCK_NUMBER - 1;
     private static final int BASE = 256;
-    private static final int MAX_BLOCK_VALUE = BASE - 1;
+    private static final int MAX_BLOCK_VALUE = BASE - 1; // TODO: 06.03.22 is 256 allowed?
     private static final String REGEX_BLOCK = String.format("\\d{1,%s}", BLOCK_SIZE);
     /**
      * The Regex ip.
      */
-    protected static final String REGEX_IP = String.format("((?:" + REGEX_BLOCK + "\\.){%s}\\d{1,%s})", PERIOD_NUMBER, BLOCK_SIZE);
-    private static final String LEADING_ZERO_REGEX = "\\.0(\\d)+";
+    protected static final String REGEX_IP = String.format("((?:" + REGEX_BLOCK + IP_DELIMITER_REGEX + ")"
+                    + "{%s}\\d{1,%s})", PERIOD_NUMBER, BLOCK_SIZE);
+    private static final String LEADING_ZERO_REGEX = IP_DELIMITER_REGEX + "0(\\d)+|(^0(\\d)+)";
     /**
      * The Blocks.
      */
@@ -46,6 +48,9 @@ public class IP implements Comparable<IP> {
      * @throws ParseException the parse exception
      */
     public IP(final String pointNotation) throws ParseException {
+        if (pointNotation == null) {
+            throw new ParseException("IP is null");
+        }
         blocks = parseIP(pointNotation);
     }
 
@@ -67,7 +72,7 @@ public class IP implements Comparable<IP> {
             throw new ParseException(String.format(Errors.S_NOT_NETWORK, ipString));
         }
 
-        if (zeroMatcher.matches()) {
+        if (zeroMatcher.find()) {
             throw new ParseException(String.format(Errors.STRING_S_CONTAINS_LEADING_ZEROS, ipString));
         }
 
@@ -89,7 +94,7 @@ public class IP implements Comparable<IP> {
 
     @Override
     public String toString() {
-        return blocks.stream().map(x -> Integer.toString(x)).collect(Collectors.joining(IP_DELIMITER));
+        return blocks.stream().map(x -> Integer.toString(x)).collect(joining(IP_DELIMITER));
     }
 
     @Override

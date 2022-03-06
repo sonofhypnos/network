@@ -112,6 +112,7 @@ public class Network {
         // TODO: 16.02.22 implement
         TreeTopology<IP> graph = new Forest<>();
         this.graph = parseNetwork(bracketNotation, graph);
+        // TODO: 06.03.22 use matcher-find for matching?
         // TODO: 05.03.22 are we supposed to include assertions in code?
         if (!(this.graph == null) && !this.graph.isForest()) { //connectedness is given through parsing;
             throw new ParseException(String.format(NETWORK_DOES_NOT_DESCRIBE_A_VALID_TREETOPOLOGY));
@@ -203,10 +204,12 @@ public class Network {
         IP child;
         try {
             child = new IP(node);
-            graph.add(child, root);
         } catch (ParseException e) {
-            e.printStackTrace();
             throw new ParseException(e.getMessage());// TODO: 05.03.22 correct this exception
+        }
+
+        if (!graph.add(child, root)) {
+            throw new ParseException("Duplicate IP");
         }
         return child;
     }

@@ -224,6 +224,7 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
     @Override
     public int hashCode() {
         // TODO: do we need hashcodes?
-        return Objects.hash(getEdges());
+
+        return Objects.hash(getEdges().stream().sorted());
     }
 }
