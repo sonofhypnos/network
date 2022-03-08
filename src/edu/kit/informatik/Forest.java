@@ -1,31 +1,28 @@
 package edu.kit.informatik;
 
-import model.TreeTopology;
-
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * The type Hashmap graph.
+ * The Forest Class. This class contains all functions for Forests that aren't specific to the fact that Network.
+ * contains IPs.
+ * @author upkim
+ * @version 1.0 2022-03-08 09:58
  *
  * @param <E> the type parameter
  */
-public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
+public class Forest<E> {
     /**
      * The constant DIRECTED_EDGE_PER_EDGE. The number of direct edges in the directed interpretation of the graph used
      * to model the undirected graph.
      */
-    public static final int DIRECTED_EDGE_PER_EDGE = 2;
-    public static final int MIN_NODES = 2;
-    /*
-     * @project FinalAssignmentNoBloat
-     * @author upkim
-     */
-
-    private HashMap<E, List<E>> edges;
+    private static final int DIRECTED_EDGE_PER_EDGE = 2;
+    private static final int MIN_NODES = 2;
+    private final HashMap<E, List<E>> edges;
 
     /**
-     * Instantiates a new Hashmap graph.
+     * Instantiates a new Forest.
      *
      * @param nodes the nodes
      */
@@ -34,14 +31,13 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
     }
 
     /**
-     * Instantiates a new Hashmap graph.
+     * Instantiates a new Forest object without any Nodes.
      */
     public Forest() {
         this.edges = new HashMap<>();
     }
 
     private HashMap<E, List<E>> copyEdges(final HashMap<E, List<E>> nodes) {
-        // TODO: 19.02.22 asserts already proper format!
         HashMap<E, List<E>> newEdges = new HashMap<>();
         for (E firstNode : nodes.keySet()) {
             List<E> nextNodes = new ArrayList<>(nodes.get(firstNode));
@@ -51,27 +47,43 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
     }
 
     private HashMap<E, List<E>> getMap() {
-        // TODO: 20.02.22 test this actually works? use library function to copy stuff?
         return copyEdges(edges);
     }
 
-    @Override
+    /**
+     * Returns List of edges in the Forest.
+     *
+     * @return the edges
+     */
     public List<List<E>> getEdges() {
         List<List<E>> edges = new ArrayList<>();
         HashMap<E, List<E>> newMap = getMap();
         for (E node : newMap.keySet()) {
-            edges.addAll(newMap.get(node).stream().map((E connectedNode) -> List.of(node, connectedNode)).collect(Collectors.toList()));
+            edges.addAll(newMap.get(node).stream().map((E connectedNode) -> List.of(node, connectedNode))
+                    .collect(Collectors.toList()));
         }
         return edges;
     }
 
-    @Override
+    /**
+     * Copy forest.
+     *
+     * @return the forest
+     */
     public Forest<E> copy() {
         return new Forest<>(getMap());
     }
 
-    @Override
+    /**
+     * Get levels list. Implements breadth search. Inspired by findPath solution I used one year ago for this course
+     *
+     * @param root the root
+     * @return the levels
+     */
     public List<List<E>> getLevels(final E root) {
+        if (!this.contains(root)) {
+            return new ArrayList<>();
+        }
         final Set<E> visited = new HashSet<>();
         final List<List<E>> levels = new ArrayList<>(List.of(List.of(root)));
         visited.add(root);
@@ -80,48 +92,80 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
 
 
     private List<List<E>> getLevelsRecursive(final Set<E> visited, final List<List<E>> levels) {
-        // TODO: 20.02.22 what is final doing here?
-        // TODO: 19.02.22 maybe be simplified with tree assumption
         List<E> lastNodes = levels.get(levels.size() - 1);
-        // TODO: 28.02.22 use fold below: eg. reduce and then two functions??
-        List<E> newLevel = lastNodes.stream().flatMap((E x) -> this.edges.get(x).stream().filter((E y) -> !(visited.contains(y)))).distinct().sorted().collect(Collectors.toList());
+
+        List<E> newLevel = lastNodes.stream().flatMap((E x) -> this.edges.get(x).stream()
+                .filter(isChildPredicate(visited))).distinct().sorted().collect(Collectors.toList());
+
         if (newLevel.isEmpty()) {
             return levels;
         }
+
         levels.add(newLevel);
         visited.addAll(newLevel);
         return getLevelsRecursive(visited, levels);
     }
 
-    @Override
+    private Predicate<E> isChildPredicate(final Set<E> visited) {
+        return (E y) -> !(visited.contains(y));
+    }
+
+    /**
+     * Gets height.
+     *
+     * @param root the root
+     * @return the height
+     */
     public int getHeight(final E root) {
         return getLevels(root).size() - 1;
     }
 
-    @Override
+    /**
+     * List list.
+     *
+     * @return the list
+     */
     public List<E> list() {
-        // TODO: 19.02.22 make pretty
         return edges.keySet().stream().sorted().collect(Collectors.toList());
     }
 
-    private List<E> getConnected(E element) {
-        // TODO: 20.02.22 make sure this does create a new list?
+    private List<E> getConnected(final E element) {
         return getLevels(element).stream().flatMap(List::stream).collect(Collectors.toList());
     }
 
-    @Override
+    /**
+     * Disconnect boolean. Removes an undirected edge if successful.
+     *
+     * @param a first node
+     * @param b second node
+     * @return the boolean
+     */
     public boolean disconnect(final E a, final E b) {
+        assert a != null;
+        this.copy();
         return remove(a, b);
     }
 
-    @Override
+    /**
+     * Remove boolean. Adds an edge to the instance if successful.
+     *
+     * @param a first node
+     * @param b second node
+     * @return the boolean
+     */
     public boolean remove(final E a, final E b) {
         removeOneSided(a, b);
         return removeOneSided(b, a);
     }
 
+
+    /**
+     * Removes edge one entry in the edgeMap if successful.
+     * @param a from edge
+     * @param b to edge
+     * @return boolean If edge successfully added.
+     */
     private boolean removeOneSided(final E a, final E b) {
-        // TODO: 19.02.22 changes side-effects!
         if (edges.containsKey(a) && edges.get(a).remove(b)) {
             if (edges.get(a).isEmpty()) {
                 edges.remove(a);
@@ -131,23 +175,63 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
         return false;
     }
 
-    private void disconnect(final E element) {
-        for (E child : this.edges.get(element)) {
-            this.edges.remove(child, element);
-        }
-    }
-
-    @Override
+    /**
+     * Contains returns true if element in Graph
+     *
+     * @param element the element
+     * @return the boolean
+     */
     public boolean contains(final E element) {
         return this.edges.containsKey(element);
     }
 
-    @Override
+    /**
+     * Gets route in the graph between start and end node. Returns empty List if no route exists or start equals the
+     * end.
+     *
+     * @param start the start
+     * @param end   the end
+     * @return the route
+     */
     public List<E> getRoute(final E start, final E end) {
-        return null;
+        List<List<E>> levels = getLevels(start);
+        boolean connected = getConnected(start).contains(end);
+
+        if (!(this.contains(start) && this.contains(end)) || !connected) {
+            return new ArrayList<>();
+        }
+        // Since graph is a tree, the "end"-node only has one parent, which must be on the level above "end" in the
+        // tree. We therefore find the route by going through the lineage of "end's" ancestors.
+        while (!levels.get(levels.size() - 1).contains(end)) {
+            levels.remove(levels.size() - 1);
+        }
+        List<E> route = new ArrayList<>();
+        route.add(end);
+        E currentNode = end;
+        // We track the path backward (from branch to root) through the tree which is easier, since every node is
+        // guaranteed to have one and only one parent.
+        for (int i = levels.size() - 2; i >= 0; i--) {
+            final E currentNodeCopy = currentNode; //We do this because Java does not support real closures.
+            // The value of currentNode is not allowed to change after being used in the lambda, so we create a final
+            // variable and the compiler stops complaining.
+            List<E> connectedNodes = levels.get(i).stream().filter((E potentialParent) ->
+                            this.get(potentialParent).contains(currentNodeCopy)).collect(Collectors.toList());
+            connectedNodes.retainAll(levels.get(i));
+            E parent = connectedNodes.get(0);
+            route.add(parent);
+            currentNode = parent;
+        }
+        Collections.reverse(route); //We need to reverse the list since we've gone backward from end to start.
+        return route;
     }
 
-    @Override
+
+    /**
+     * Get list.
+     *
+     * @param element the element
+     * @return the list
+     */
     public List<E> get(final E element) {
         assert element != null;
         if (edges.get(element) == null) {
@@ -156,10 +240,14 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
         return new ArrayList<>(edges.get(element));
     }
 
-    @Override
+    /**
+     * Add edge between first and second to the graph and returns true.
+     *
+     * @param first  the first node
+     * @param second the second node
+     * @return true if successful and false otherwise.
+     */
     public boolean add(final E first, final E second) {
-        // TODO: 19.02.22 needs documentation that we modify state
-        // TODO: 20.02.22 what if connection already exists? Do we keep quiet?
         if (first == null || second == null) {
             return false;
         }
@@ -167,6 +255,14 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
         return addOneDirection(second, first);
     }
 
+    //
+
+    /**
+     * Adds edge to edges in one direction.
+     * @param first node
+     * @param second node
+     * @return true if successfully added edge.
+     */
     private boolean addOneDirection(final E first, final E second) {
         if (edges.containsKey(first)) {
             final List<E> connectedNodes = edges.get(first);
@@ -183,12 +279,13 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
     }
 
 
-    @Override
+    /**
+     * Returns if the instance is a valid Forest.
+     *
+     * @return if every Tree in the Forest has a valid tree topology.
+     */
     public boolean isForest() {
-        // TODO: 19.02.22 think about conserving this explicitly?
-        // TODO: 20.02.22 write tests for isForest?
         List<E> nodes = this.list();
-
         if (nodes.size() < MIN_NODES) {
             return false;
         }
@@ -197,34 +294,56 @@ public class Forest<E extends Comparable<E>> implements TreeTopology<E> {
             E currentRoot = nodes.get(0);
             List<E> connectedSubGraph = new ArrayList<>(getConnected(currentRoot));
             nodes.removeAll(connectedSubGraph);
-            // For every node, get the sum of the number of connected nodes
-            // which is equivalent to the number of directed edges,
-            // which is half the number of undirected edges.
-            long subgraphEdgeNumber = (this.edges.values().stream()
-                    .flatMap(x -> x.stream().filter(connectedSubGraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
-
-            // For a graph to be a tree, it needs to be connected, and every child is connected to exactly one
-            // parent. Thus, the number of edges must be the number of children, which is the number of nodes
-            // minus the root node. As a formula |E| = |V| - 1.
-            boolean treePredicate = subgraphEdgeNumber == connectedSubGraph.size() - 1;
-            if (!treePredicate) { //if one connected subgraph is not a tree, we don't have a forest.
-                return false;
-            }
+            if (!isTree(connectedSubGraph)) return false;
         }
         return true;
     }
 
+    private boolean isTree(final List<E> connectedSubGraph) {
+        // For every node, get the sum of the number of connected nodes
+        // which is equivalent to the number of directed edges,
+        // which is half the number of undirected edges.
+        long subgraphEdgeNumber = (this.edges.values().stream()
+                .flatMap(x -> x.stream().filter(connectedSubGraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
+
+        // For a graph to be a tree, it needs to be connected, and every child is connected to exactly one
+        // parent. Thus, the number of edges must be the number of children, which is the number of nodes
+        // minus the root node. As a formula |E| = |V| - 1.
+        return subgraphEdgeNumber == connectedSubGraph.size() - 1;
+    }
+
     @Override
-    public boolean equals(final TreeTopology<E> tree) {
-        // TODO: 21.02.22 figure out if overloading is enough for tutors
-        E root = this.list().get(0);
-        return this.getLevels(root).equals(tree.getLevels(root)) && this.getEdges().size() == tree.getEdges().size();
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Forest)) return false;
+        Forest<E> forest = (Forest<E>) o;
+        ArrayList<ArrayList<E>> first = this.getComparable();
+        ArrayList<ArrayList<E>> second = forest.getComparable();
+        return first.equals(second);
+    }
+
+
+    /**
+     * Returns the number of nodes in tree.
+     *
+     * @return the number of nodes in tree.
+     */
+    public int size() {
+        return this.list().size();
     }
 
     @Override
     public int hashCode() {
-        // TODO: do we need hashcodes?
+        ArrayList<ArrayList<E>> collect = getComparable();
+        return Objects.hash(collect);
+    }
 
-        return Objects.hash(getEdges().stream().sorted());
+
+    private ArrayList<ArrayList<E>> getComparable() {
+        // TODO: 08.03.22 fix this
+        return this.getEdges().stream()
+                .map(x -> x.stream()
+                        .sorted().collect(Collectors.toCollection(ArrayList::new)))
+                .sorted().collect(Collectors.toCollection(ArrayList::new));
     }
 }

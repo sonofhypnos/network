@@ -1,10 +1,13 @@
-package edu.kit.informatik;
+package edu.kit.informatik.resources;
 
 /**
- * The type Parse exception.
+ * Parse exception.
  *
+ * @author upkim
+ * @version 1.0
  */
-public class ParseException extends KitException {
+public class ParseException extends RuntimeException {
+
     /**
      * Instantiates a new Parse exception.
      *
