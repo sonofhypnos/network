@@ -4,7 +4,10 @@ import edu.kit.informatik.resources.ForestException;
 import edu.kit.informatik.resources.NetworkException;
 import edu.kit.informatik.resources.ParseException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,13 +30,14 @@ public class Network {
 
     //Error Messages
     private static final String ERROR_INVALID_IPS = "Error, network contains invalid ips";
-    private static final String ERROR_MINIMUM_OF_1_CONNECTION = "The network must have a minimum of one connection";
     private static final String ERROR_BRACKET = "Error, there is a parenthesis mismatch in the provided string.";
     private static final String ERROR_NETWORK_STRING_IS_NULL = "Error, network string is null.";
     private static final String ERROR_NETWORK_STRING_IS_EMPTY = "Error, network string is empty.";
     private static final String ERROR_DUPLICATE_I_PS = "Error, duplicate entries in provided String.";
     private static final String ERROR_THERE_ARE_DUPLICATE_CHILDREN = "Error, there are duplicate children.";
     private static final String ERROR_NOT_A_VALID_FOREST = "Error, network does not describe a valid forest.";
+    private static final String ERROR_MINIMUM_OF_1_CONNECTION = "Error, The network must have a minimum of one "
+            + "connection";
 
     private Forest<IP> graph;
 
@@ -282,7 +286,7 @@ public class Network {
      * @param root the root
      * @return the list
      */
-    List<List<IP>> getLevels(final IP root) {
+    public List<List<IP>> getLevels(final IP root) {
         if (root == null) {
             return new ArrayList<>();
         }
