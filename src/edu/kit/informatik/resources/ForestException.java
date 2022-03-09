@@ -6,14 +6,14 @@ package edu.kit.informatik.resources;
  * @author upkim
  * @version 1.0 2022-03-08 11:52
  */
-public class NetworkException extends RuntimeException {
+public class ForestException extends RuntimeException {
 
     /**
      * Instantiates a new Tree exception.
      *
      * @param message the message
      */
-    public NetworkException(String message) {
+    public ForestException(String message) {
         super(message);
     }
 }

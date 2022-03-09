@@ -1,5 +1,7 @@
 package edu.kit.informatik;
 
+import edu.kit.informatik.resources.ForestException;
+
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -7,18 +9,18 @@ import java.util.stream.Collectors;
 /**
  * The Forest Class. This class contains all functions for Forests that aren't specific to the fact that Network.
  * contains IPs.
- * @author upkim
- * @version 1.0 2022-03-08 09:58
  *
  * @param <E> the type parameter
+ * @author upkim
+ * @version 1.0 2022-03-08 09:58
  */
 public class Forest<E> {
     /**
-     * The constant DIRECTED_EDGE_PER_EDGE. The number of direct edges in the directed interpretation of the graph used
-     * to model the undirected graph.
+     * Minimum nodes a forest has to have.
      */
-    private static final int DIRECTED_EDGE_PER_EDGE = 2;
-    private static final int MIN_NODES = 2;
+    static final int MIN_NODES = 2;
+    private static final String LOOP_FOREST = "Adding this edge would add a loop to the forest";
+
     private final HashMap<E, List<E>> edges;
 
     /**
@@ -129,7 +131,13 @@ public class Forest<E> {
         return edges.keySet().stream().sorted().collect(Collectors.toList());
     }
 
-    private List<E> getConnected(final E element) {
+    /**
+     * Returns nodes connected to this node.
+     *
+     * @param element the element
+     * @return the connected
+     */
+    public List<E> getConnected(final E element) {
         return getLevels(element).stream().flatMap(List::stream).collect(Collectors.toList());
     }
 
@@ -141,9 +149,11 @@ public class Forest<E> {
      * @return the boolean
      */
     public boolean disconnect(final E a, final E b) {
-        assert a != null;
-        this.copy();
-        return remove(a, b);
+        boolean isLastEdge = this.edges.containsKey(a) && edges.get(a).contains(b) && this.size() == MIN_NODES;
+        if (isLastEdge) {
+            return false;
+        }
+        return this.remove(a, b);
     }
 
     /**
@@ -194,12 +204,12 @@ public class Forest<E> {
      * @return the route
      */
     public List<E> getRoute(final E start, final E end) {
-        List<List<E>> levels = getLevels(start);
         boolean connected = getConnected(start).contains(end);
 
-        if (!(this.contains(start) && this.contains(end)) || !connected) {
+        if (!(this.contains(start) && this.contains(end)) || !connected || start.equals(end)) {
             return new ArrayList<>();
         }
+        List<List<E>> levels = getLevels(start);
         // Since graph is a tree, the "end"-node only has one parent, which must be on the level above "end" in the
         // tree. We therefore find the route by going through the lineage of "end's" ancestors.
         while (!levels.get(levels.size() - 1).contains(end)) {
@@ -251,6 +261,11 @@ public class Forest<E> {
         if (first == null || second == null) {
             return false;
         }
+        boolean addsLoop = edges.containsKey(first) && !edges.get(first).contains(second)
+                && getConnected(first).contains(second); //a connected node that is not adjacent adds a loop to a graph
+        if (addsLoop) {
+            throw new ForestException(LOOP_FOREST);
+        }
         addOneDirection(first, second);
         return addOneDirection(second, first);
     }
@@ -279,47 +294,48 @@ public class Forest<E> {
     }
 
 
-    /**
-     * Returns if the instance is a valid Forest.
-     *
-     * @return if every Tree in the Forest has a valid tree topology.
-     */
-    public boolean isForest() {
-        List<E> nodes = this.list();
-        if (nodes.size() < MIN_NODES) {
-            return false;
-        }
+//    /**
+//     * Returns if the instance is a valid Forest.
+//     *
+//     * @return if every Tree in the Forest has a valid tree topology.
+//     */
+//    public boolean isForest() {
+//        List<E> nodes = this.list();
+//        if (nodes.size() < MIN_NODES) {
+//            return false;
+//        }
+//
+//        while (!nodes.isEmpty()) {
+//            E currentRoot = nodes.get(0);
+//            List<E> connectedSubGraph = new ArrayList<>(getConnected(currentRoot));
+//            nodes.removeAll(connectedSubGraph);
+//            if (!isTree(connectedSubGraph)) return false;
+//        }
+//        return true;
+//    }
 
-        while (!nodes.isEmpty()) {
-            E currentRoot = nodes.get(0);
-            List<E> connectedSubGraph = new ArrayList<>(getConnected(currentRoot));
-            nodes.removeAll(connectedSubGraph);
-            if (!isTree(connectedSubGraph)) return false;
-        }
-        return true;
-    }
-
-    private boolean isTree(final List<E> connectedSubGraph) {
-        // For every node, get the sum of the number of connected nodes
-        // which is equivalent to the number of directed edges,
-        // which is half the number of undirected edges.
-        long subgraphEdgeNumber = (this.edges.values().stream()
-                .flatMap(x -> x.stream().filter(connectedSubGraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
-
-        // For a graph to be a tree, it needs to be connected, and every child is connected to exactly one
-        // parent. Thus, the number of edges must be the number of children, which is the number of nodes
-        // minus the root node. As a formula |E| = |V| - 1.
-        return subgraphEdgeNumber == connectedSubGraph.size() - 1;
-    }
-
+//    private boolean isTree(final List<E> connectedSubGraph) {
+//        // For every node, get the sum of the number of connected nodes
+//        // which is equivalent to the number of directed edges,
+//        // which is half the number of undirected edges.
+//        long subgraphEdgeNumber = (this.edges.values().stream()
+//                .flatMap(node -> node.stream().filter(connectedSubGraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
+//
+//        // For a graph to be a tree, it needs to be connected, and every child is connected to exactly one
+//        // parent. Thus, the number of edges must be the number of children, which is the number of nodes
+//        // minus the root node. As a formula |E| = |V| - 1.
+//        return subgraphEdgeNumber == connectedSubGraph.size() - 1;
+//    }
+//
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (!(o instanceof Forest)) return false;
-        Forest<E> forest = (Forest<E>) o;
-        ArrayList<ArrayList<E>> first = this.getComparable();
-        ArrayList<ArrayList<E>> second = forest.getComparable();
-        return first.equals(second);
+        Forest<?> forest = (Forest<?>) o;
+        //we compare the sets since order of the Edges does not matter.
+        Set<Set<E>> first = this.getEdgeSets();
+        Set<? extends Set<?>> second = forest.getEdgeSets();
+        return Objects.equals(first, second);
     }
 
 
@@ -334,16 +350,12 @@ public class Forest<E> {
 
     @Override
     public int hashCode() {
-        ArrayList<ArrayList<E>> collect = getComparable();
+        Set<Set<E>> collect = getEdgeSets();
         return Objects.hash(collect);
     }
 
 
-    private ArrayList<ArrayList<E>> getComparable() {
-        // TODO: 08.03.22 fix this
-        return this.getEdges().stream()
-                .map(x -> x.stream()
-                        .sorted().collect(Collectors.toCollection(ArrayList::new)))
-                .sorted().collect(Collectors.toCollection(ArrayList::new));
+    private Set<Set<E>> getEdgeSets() {
+        return this.getEdges().stream().map(HashSet::new).collect(Collectors.toSet());
     }
 }

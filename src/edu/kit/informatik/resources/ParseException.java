@@ -4,7 +4,7 @@ package edu.kit.informatik.resources;
  * Parse exception.
  *
  * @author upkim
- * @version 1.0
+ * @version 1.0 2022-03-08 11:52
  */
 public class ParseException extends RuntimeException {
 

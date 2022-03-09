@@ -1,5 +1,6 @@
 package edu.kit.informatik;
 
+import edu.kit.informatik.resources.ForestException;
 import edu.kit.informatik.resources.NetworkException;
 import edu.kit.informatik.resources.ParseException;
 
@@ -13,27 +14,25 @@ import static edu.kit.informatik.IP.REGEX_IP;
  * The Network class. Implements all functions from the assignment.
  *
  * @author :upkim
- * @version : 1.0
+ * @version : 1.0 2022-03-08 11:52
  */
 public class Network {
+    private static final String SEPARATION_STRING = " ";
     private static final String PREFIX = "(";
     private static final String SUFFIX = ")";
-    public static final String SEPARATION_STRING = " ";
-    private static final int SEP_NUMBER = 2; //that this value is 2 instead of 1 has to do with the peculiarities of
+    private static final int SEP_NUMBER = 2; //2 instead of 1 for reasonable behaviour by the split method
     private static final String EMPTY_STRING = "";
-
-    //Errors
-    private static final String THERE_IS_A_BRACKET_MISMATCH_IN_THE_PROVIDED_STRING = "Error, "
-            + "there is a parenthesis mismatch in the provided string.";
-    private static final String NETWORK_DOES_NOT_DESCRIBE_A_VALID_FOREST = "Error, network does not describe"
-            + " a valid Forest";
     private static final String SUFFIX_REGEX = "\\)";
-    private static final String NETWORK_STRING_IS_NULL = "Error, network string is null.";
-    private static final String NETWORK_STRING_IS_EMPTY = "Error, network string is empty.";
-    private static final String DUPLICATE_I_PS_IN_PROVIDED_STRING = "Error, duplicate entries in provided String.";
-    private static final String ERROR_THERE_ARE_DUPLICATE_CHILDREN = "Error, there are duplicate children";
-    private static final String ERROR_GIVEN_DOES_NOT_DESCRIBE_A_VALID_TREE_TOPOLOGY = "Error, given ... does not "
-            + "describe a valid Tree Topology";
+
+    //Error Messages
+    private static final String ERROR_INVALID_IPS = "Error, network contains invalid ips";
+    private static final String ERROR_MINIMUM_OF_1_CONNECTION = "The network must have a minimum of one connection";
+    private static final String ERROR_BRACKET = "Error, there is a parenthesis mismatch in the provided string.";
+    private static final String ERROR_NETWORK_STRING_IS_NULL = "Error, network string is null.";
+    private static final String ERROR_NETWORK_STRING_IS_EMPTY = "Error, network string is empty.";
+    private static final String ERROR_DUPLICATE_I_PS = "Error, duplicate entries in provided String.";
+    private static final String ERROR_THERE_ARE_DUPLICATE_CHILDREN = "Error, there are duplicate children.";
+    private static final String ERROR_NOT_A_VALID_FOREST = "Error, network does not describe a valid forest.";
 
     private Forest<IP> graph;
 
@@ -45,7 +44,7 @@ public class Network {
      */
     public Network(final IP root, final List<IP> children) {
         if (root == null || children == null || children.contains(root)) {
-            throw new NetworkException(ERROR_GIVEN_DOES_NOT_DESCRIBE_A_VALID_TREE_TOPOLOGY);
+            throw new NetworkException(ERROR_NOT_A_VALID_FOREST);
         }
         if (children.size() != children.stream().distinct().count()) {
             throw new NetworkException(ERROR_THERE_ARE_DUPLICATE_CHILDREN);
@@ -66,9 +65,6 @@ public class Network {
     public Network(final String bracketNotation) throws ParseException {
         Forest<IP> graph = new Forest<>();
         this.graph = parseNetwork(bracketNotation, graph);
-        if (!this.graph.isForest()) { //connectedness is given through parsing;
-            throw new ParseException(NETWORK_DOES_NOT_DESCRIBE_A_VALID_FOREST);
-        }
     }
 
     /**
@@ -79,17 +75,17 @@ public class Network {
      * @return the tree node
      * @throws ParseException if bracketNotation does not describe a valid Forest
      */
-    public static Forest<IP> parseNetwork(final String bracketNotation, final Forest<IP> graph) throws ParseException {
+    private static Forest<IP> parseNetwork(final String bracketNotation, final Forest<IP> graph) throws ParseException {
         if (bracketNotation == null) {
-            throw new ParseException(NETWORK_STRING_IS_NULL);
+            throw new ParseException(ERROR_NETWORK_STRING_IS_NULL);
         }
         if (bracketNotation.equals("")) {
-            throw new ParseException(NETWORK_STRING_IS_EMPTY);
+            throw new ParseException(ERROR_NETWORK_STRING_IS_EMPTY);
         }
         if (!bracketNotation.endsWith(SUFFIX)) { // we check this here already so that in the recursive call it is
             // guaranteed that the string ends in the suffix, thus we don't have to check in the recursive call for
             // the suffix and for the end of the string separately.
-            throw new ParseException(NETWORK_DOES_NOT_DESCRIBE_A_VALID_FOREST);
+            throw new ParseException(ERROR_NOT_A_VALID_FOREST);
         }
 
         List<String> ips = new ArrayList<>();
@@ -98,18 +94,25 @@ public class Network {
             ips.add(ipMatcher.group());
         }
         if (ips.stream().distinct().count() != ips.size()) {
-            throw new ParseException(DUPLICATE_I_PS_IN_PROVIDED_STRING);
+            throw new ParseException(ERROR_DUPLICATE_I_PS);
+        }
+        if (ips.size() < Forest.MIN_NODES) {
+            throw new ParseException(ERROR_MINIMUM_OF_1_CONNECTION);
         }
 
 
         if (!parseNetworkRecursive(bracketNotation, null, graph).equals("")) {
-            throw new ParseException(THERE_IS_A_BRACKET_MISMATCH_IN_THE_PROVIDED_STRING);
+            throw new ParseException(ERROR_BRACKET);
         }
         return graph;
     }
 
     /**
      * Parse network string. Modifies the input-graph, to simplify the recursive calls.
+     * <p>
+     * Separates entries by separation string. Sets first entry as root and adds connections between children and
+     * root afterwards, calls itself recursively if entry starts with "prefix" and returns when finding "suffix",
+     * so that the remaining string can be handled by calling function.
      *
      * @param bracketNotation Remaining Input to be parsed
      * @param parent          the parent
@@ -117,12 +120,13 @@ public class Network {
      * @return the string
      * @throws ParseException the parse exception
      */
-    private static String parseNetworkRecursive(final String bracketNotation, final IP parent, Forest<IP> graph) throws ParseException {
+    private static String parseNetworkRecursive(final String bracketNotation, final IP parent, Forest<IP> graph)
+            throws ParseException {
         if (bracketNotation.startsWith(PREFIX)) {
             String ipString = bracketNotation.substring(PREFIX.length()); //remove prefix
             IP root = null;
             String node;
-            // TODO: 08.03.22 Add explanation?
+
             while (true) {
                 boolean hitEndGlobal = !ipString.contains(SEPARATION_STRING);
                 if (hitEndGlobal) {
@@ -147,10 +151,11 @@ public class Network {
                 }
             }
         }
-        throw new ParseException(THERE_IS_A_BRACKET_MISMATCH_IN_THE_PROVIDED_STRING);
+        throw new ParseException(ERROR_BRACKET);
     }
 
-    private static String parseLast(final Forest<IP> graph, final String ipString, final IP root) throws ParseException {
+    private static String parseLast(final Forest<IP> graph, final String ipString, final IP root)
+            throws ParseException {
         String node;
         String[] separatedSuffix = ipString.split(SUFFIX_REGEX, SEP_NUMBER);
         node = separatedSuffix[0];
@@ -166,10 +171,14 @@ public class Network {
         try {
             child = new IP(node);
         } catch (ParseException e) {
-            throw new ParseException(NETWORK_DOES_NOT_DESCRIBE_A_VALID_FOREST);
+            throw new ParseException(ERROR_INVALID_IPS);
         }
 
-        graph.add(child, root);
+        try {
+            graph.add(child, root);
+        } catch (ForestException e) {
+            throw new ParseException(ERROR_NOT_A_VALID_FOREST);
+        }
         return child;
     }
 
@@ -181,16 +190,19 @@ public class Network {
      * @return the boolean
      */
     public boolean add(final Network subnet) {
-        // TODO: 08.03.22 put into separate thingy?
         if (subnet == null) {
             return false;
         }
         Forest<IP> newGraph = this.graph.copy();
         List<List<IP>> newEdges = subnet.graph.getEdges();
         for (List<IP> edge : newEdges) {
-            newGraph.add(edge.get(0), edge.get(1));
+            try {
+                newGraph.add(edge.get(0), edge.get(1));
+            } catch (ForestException e) {
+                return false;
+            }
         }
-        if (!newGraph.isForest() || this.graph.equals(newGraph)) {
+        if (this.graph.equals(newGraph)) {
             return false;
         }
         this.graph = newGraph;
@@ -214,10 +226,14 @@ public class Network {
      * @return the boolean
      */
     public boolean connect(final IP ip1, final IP ip2) {
-        if (ip1 == null || ip2 == null || ip1.equals(ip2)) {
+        if (ip1 == null || ip2 == null || ip1.equals(ip2) || !(this.graph.contains(ip1) && this.graph.contains(ip2))) {
             return false;
         }
-        return this.graph.add(ip1, ip2);
+        try {
+            return this.graph.add(ip1, ip2);
+        } catch (ForestException e) {
+            return false;
+        }
     }
 
     /**
@@ -325,7 +341,6 @@ public class Network {
 
     @Override
     public boolean equals(final Object o) {
-        // TODO: 08.03.22 correct equals method
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Network network = (Network) o;
@@ -337,7 +352,6 @@ public class Network {
     public int hashCode() {
         return Objects.hash(graph);
     }
-
 
 
 }

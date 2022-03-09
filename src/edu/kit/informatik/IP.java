@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.joining;
  * The type Ip. The IP class is immutable.
  *
  * @author upkim
- * @version 1.0
+ * @version 1.0 2022-03-08 11:52
  */
 public class IP implements Comparable<IP> {
 
@@ -32,7 +32,7 @@ public class IP implements Comparable<IP> {
     /**
      * The REGEX for the IP. There is a Delimiter after every Block except the last one.
      */
-    protected static final String REGEX_IP = String.format("((?:" + REGEX_BLOCK + IP_DELIMITER_REGEX + ")"
+    static final String REGEX_IP = String.format("((?:" + REGEX_BLOCK + IP_DELIMITER_REGEX + ")"
             + "{%d}" + REGEX_BLOCK + ")", BLOCK_NUMBER - 1);
     //either the leading 0 comes after the delimiter or it is at the front of the IP-string.
     private static final String LEADING_ZERO_REGEX = IP_DELIMITER_REGEX + "0(\\d)+|(^0(\\d)+)";
