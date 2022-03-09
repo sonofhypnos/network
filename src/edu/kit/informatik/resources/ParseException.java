@@ -1,7 +1,7 @@
 package edu.kit.informatik.resources;
 
 /**
- * Parse exception.
+ * Parse exception is thrown if parse-format is violated in any way.
  *
  * @author upkim
  * @version 1.0 2022-03-08 11:52

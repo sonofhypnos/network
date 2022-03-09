@@ -11,7 +11,8 @@ import java.util.regex.Pattern;
 import static edu.kit.informatik.IP.REGEX_IP;
 
 /**
- * The Network class. Implements all functions from the assignment.
+ * The Network class. Implements all functions from the assignment. Most graph functionality is implemented in the
+ * Forest class while this class handles parsing, printing and throwing Exceptions.
  *
  * @author :upkim
  * @version : 1.0 2022-03-08 11:52
@@ -82,9 +83,7 @@ public class Network {
         if (bracketNotation.equals("")) {
             throw new ParseException(ERROR_NETWORK_STRING_IS_EMPTY);
         }
-        if (!bracketNotation.endsWith(SUFFIX)) { // we check this here already so that in the recursive call it is
-            // guaranteed that the string ends in the suffix, thus we don't have to check in the recursive call for
-            // the suffix and for the end of the string separately.
+        if (!bracketNotation.endsWith(SUFFIX)) {
             throw new ParseException(ERROR_NOT_A_VALID_FOREST);
         }
 
@@ -122,36 +121,33 @@ public class Network {
      */
     private static String parseNetworkRecursive(final String bracketNotation, final IP parent, Forest<IP> graph)
             throws ParseException {
-        if (bracketNotation.startsWith(PREFIX)) {
-            String ipString = bracketNotation.substring(PREFIX.length()); //remove prefix
-            IP root = null;
-            String node;
+        if (!bracketNotation.startsWith(PREFIX)) {
 
-            while (true) {
-                boolean hitEndGlobal = !ipString.contains(SEPARATION_STRING);
-                if (hitEndGlobal) {
-                    return parseLast(graph, ipString, root);
-                }
-                String[] separatedString = ipString.split(SEPARATION_STRING, SEP_NUMBER);
-                node = separatedString[0];
-                ipString = separatedString[1];
-                if (root == null) {
-                    root = addChild(graph, parent, node);
-                } else if (node.startsWith(PREFIX)) {
-                    ipString = parseNetworkRecursive(node + SEPARATION_STRING + ipString, root, graph);
-                } else if (node.endsWith(SUFFIX)) {
-                    node = parseLast(graph, node, root);
-                    if (node.equals(EMPTY_STRING)) {
-                        return ipString;
-                    }
-                    return node + SEPARATION_STRING + ipString;
-
-                } else {
-                    addChild(graph, root, node);
-                }
-            }
+            throw new ParseException(ERROR_BRACKET);
         }
-        throw new ParseException(ERROR_BRACKET);
+
+        String ipString = bracketNotation.substring(PREFIX.length()); //remove prefix
+        IP root = null;
+
+        while (ipString.contains(SEPARATION_STRING)) {
+            String[] separatedString = ipString.split(SEPARATION_STRING, SEP_NUMBER);
+            String node = separatedString[0];
+            ipString = separatedString[1];
+
+            if (root == null)
+                root = addChild(graph, parent, node);
+
+            else if (node.startsWith(PREFIX))
+                ipString = parseNetworkRecursive(node + SEPARATION_STRING + ipString, root, graph);
+
+            else if (node.endsWith(SUFFIX)) {
+                String remainingParentheses = parseLast(graph, node, root);
+                if (remainingParentheses.equals(EMPTY_STRING)) return ipString;
+                return remainingParentheses + SEPARATION_STRING + ipString;
+
+            } else addChild(graph, root, node);
+        }
+        return parseLast(graph, ipString, root);
     }
 
     private static String parseLast(final Forest<IP> graph, final String ipString, final IP root)

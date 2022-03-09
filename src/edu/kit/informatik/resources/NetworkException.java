@@ -1,7 +1,7 @@
 package edu.kit.informatik.resources;
 
 /**
- * The type NetworkException exception. Thrown if Network does not have correct format
+ * NetworkException is thrown if Network does not have correct format
  *
  * @author upkim
  * @version 1.0 2022-03-08 11:52

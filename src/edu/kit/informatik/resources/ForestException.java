@@ -1,7 +1,7 @@
 package edu.kit.informatik.resources;
 
 /**
- * The type NetworkException exception. Thrown if Network does not have correct format
+ * ForestException is thrown if a function would turn the Forest invalid.
  *
  * @author upkim
  * @version 1.0 2022-03-08 11:52

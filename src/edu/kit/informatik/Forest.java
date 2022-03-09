@@ -7,10 +7,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * The Forest Class. This class contains all functions for Forests that aren't specific to the fact that Network.
- * contains IPs.
+ * The Forest Class contains all functions for Forests that aren't specific to the network forest.
  *
- * @param <E> the type parameter
+ * @param <E> type of nodes
  * @author upkim
  * @version 1.0 2022-03-08 09:58
  */
@@ -19,14 +18,14 @@ public class Forest<E> {
      * Minimum nodes a forest has to have.
      */
     static final int MIN_NODES = 2;
-    private static final String LOOP_FOREST = "Adding this edge would add a loop to the forest";
+    private static final String ERROR_FOREST_EDGE = "Error, Adding this edge would add a loop to the forest";
 
     private final HashMap<E, List<E>> edges;
 
     /**
      * Instantiates a new Forest.
      *
-     * @param nodes the nodes
+     * @param nodes the map for the new forest
      */
     public Forest(HashMap<E, List<E>> nodes) {
         this.edges = copyEdges(nodes);
@@ -55,7 +54,7 @@ public class Forest<E> {
     /**
      * Returns List of edges in the Forest.
      *
-     * @return the edges
+     * @return the edges of the forest
      */
     public List<List<E>> getEdges() {
         List<List<E>> edges = new ArrayList<>();
@@ -68,16 +67,16 @@ public class Forest<E> {
     }
 
     /**
-     * Copy forest.
+     * Copies forest.
      *
-     * @return the forest
+     * @return copy of the forest
      */
     public Forest<E> copy() {
         return new Forest<>(getMap());
     }
 
     /**
-     * Get levels list. Implements breadth search. Inspired by findPath solution I used one year ago for this course
+     * Get levels returns the nodes below the root node in lists by their level in the tree.
      *
      * @param root the root
      * @return the levels
@@ -113,7 +112,7 @@ public class Forest<E> {
     }
 
     /**
-     * Gets height.
+     * Gets height of the tree from root.
      *
      * @param root the root
      * @return the height
@@ -123,9 +122,9 @@ public class Forest<E> {
     }
 
     /**
-     * List list.
+     * List returns new list of the edges.
      *
-     * @return the list
+     * @return list of edges
      */
     public List<E> list() {
         return edges.keySet().stream().sorted().collect(Collectors.toList());
@@ -146,10 +145,10 @@ public class Forest<E> {
      *
      * @param a first node
      * @param b second node
-     * @return the boolean
+     * @return true if successfully disconnected, false otherwise
      */
     public boolean disconnect(final E a, final E b) {
-        boolean isLastEdge = this.edges.containsKey(a) && edges.get(a).contains(b) && this.size() == MIN_NODES;
+        boolean isLastEdge = this.edges.containsKey(a) && edges.get(a).contains(b) && this.list().size() == MIN_NODES;
         if (isLastEdge) {
             return false;
         }
@@ -161,7 +160,7 @@ public class Forest<E> {
      *
      * @param a first node
      * @param b second node
-     * @return the boolean
+     * @return true iff successfully removed.
      */
     public boolean remove(final E a, final E b) {
         removeOneSided(a, b);
@@ -171,9 +170,10 @@ public class Forest<E> {
 
     /**
      * Removes edge one entry in the edgeMap if successful.
+     *
      * @param a from edge
      * @param b to edge
-     * @return boolean If edge successfully added.
+     * @return true iff edge successfully added.
      */
     private boolean removeOneSided(final E a, final E b) {
         if (edges.containsKey(a) && edges.get(a).remove(b)) {
@@ -189,7 +189,7 @@ public class Forest<E> {
      * Contains returns true if element in Graph
      *
      * @param element the element
-     * @return the boolean
+     * @return iff this contains element.
      */
     public boolean contains(final E element) {
         return this.edges.containsKey(element);
@@ -201,7 +201,7 @@ public class Forest<E> {
      *
      * @param start the start
      * @param end   the end
-     * @return the route
+     * @return the route from start to end
      */
     public List<E> getRoute(final E start, final E end) {
         boolean connected = getConnected(start).contains(end);
@@ -225,7 +225,7 @@ public class Forest<E> {
             // The value of currentNode is not allowed to change after being used in the lambda, so we create a final
             // variable and the compiler stops complaining.
             List<E> connectedNodes = levels.get(i).stream().filter((E potentialParent) ->
-                            this.get(potentialParent).contains(currentNodeCopy)).collect(Collectors.toList());
+                    this.get(potentialParent).contains(currentNodeCopy)).collect(Collectors.toList());
             connectedNodes.retainAll(levels.get(i));
             E parent = connectedNodes.get(0);
             route.add(parent);
@@ -237,10 +237,10 @@ public class Forest<E> {
 
 
     /**
-     * Get list.
+     * Get list of edges adjacent to element.
      *
      * @param element the element
-     * @return the list
+     * @return adjacent edges
      */
     public List<E> get(final E element) {
         assert element != null;
@@ -255,16 +255,16 @@ public class Forest<E> {
      *
      * @param first  the first node
      * @param second the second node
-     * @return true if successful and false otherwise.
+     * @return true iff successful.
      */
     public boolean add(final E first, final E second) {
         if (first == null || second == null) {
             return false;
         }
-        boolean addsLoop = edges.containsKey(first) && !edges.get(first).contains(second)
+        boolean addsLoop = edges.containsKey(first) && !this.get(first).contains(second)
                 && getConnected(first).contains(second); //a connected node that is not adjacent adds a loop to a graph
         if (addsLoop) {
-            throw new ForestException(LOOP_FOREST);
+            throw new ForestException(ERROR_FOREST_EDGE);
         }
         addOneDirection(first, second);
         return addOneDirection(second, first);
@@ -274,9 +274,10 @@ public class Forest<E> {
 
     /**
      * Adds edge to edges in one direction.
-     * @param first node
+     *
+     * @param first  node
      * @param second node
-     * @return true if successfully added edge.
+     * @return true iff successfully added edge.
      */
     private boolean addOneDirection(final E first, final E second) {
         if (edges.containsKey(first)) {
@@ -293,40 +294,6 @@ public class Forest<E> {
         }
     }
 
-
-//    /**
-//     * Returns if the instance is a valid Forest.
-//     *
-//     * @return if every Tree in the Forest has a valid tree topology.
-//     */
-//    public boolean isForest() {
-//        List<E> nodes = this.list();
-//        if (nodes.size() < MIN_NODES) {
-//            return false;
-//        }
-//
-//        while (!nodes.isEmpty()) {
-//            E currentRoot = nodes.get(0);
-//            List<E> connectedSubGraph = new ArrayList<>(getConnected(currentRoot));
-//            nodes.removeAll(connectedSubGraph);
-//            if (!isTree(connectedSubGraph)) return false;
-//        }
-//        return true;
-//    }
-
-//    private boolean isTree(final List<E> connectedSubGraph) {
-//        // For every node, get the sum of the number of connected nodes
-//        // which is equivalent to the number of directed edges,
-//        // which is half the number of undirected edges.
-//        long subgraphEdgeNumber = (this.edges.values().stream()
-//                .flatMap(node -> node.stream().filter(connectedSubGraph::contains)).count() / DIRECTED_EDGE_PER_EDGE);
-//
-//        // For a graph to be a tree, it needs to be connected, and every child is connected to exactly one
-//        // parent. Thus, the number of edges must be the number of children, which is the number of nodes
-//        // minus the root node. As a formula |E| = |V| - 1.
-//        return subgraphEdgeNumber == connectedSubGraph.size() - 1;
-//    }
-//
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -338,15 +305,6 @@ public class Forest<E> {
         return Objects.equals(first, second);
     }
 
-
-    /**
-     * Returns the number of nodes in tree.
-     *
-     * @return the number of nodes in tree.
-     */
-    public int size() {
-        return this.list().size();
-    }
 
     @Override
     public int hashCode() {
