@@ -4,7 +4,7 @@ package edu.kit.informatik.resources;
  * NetworkException is thrown if Network does not have correct format.
  *
  * @author upkim
- * @version 1.0 2022-03-08 11:52
+ * @version 1.0 2022-03-12 22:13
  */
 public class NetworkException extends IllegalArgumentException {
 

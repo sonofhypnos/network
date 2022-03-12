@@ -1,23 +1,26 @@
 package edu.kit.informatik;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The Forest Class contains all functions for a generic Forest, a collection of undirected trees. Every subnetwork of
- * the forest must have at least two nodes. A valid forest must contain at least one network.
+ * The Forest Class contains all functions for a generic Forest, a collection of undirected trees. A valid forest must
+ * contain at least one tree.
  *
  * @param <E> type of nodes
  * @author upkim
- * @version 1.0 2022-03-08 09:58
+ * @version 1.0 2022-03-12 22:13
  */
 public class Forest<E> {
-    /**
-     * Minimum nodes every tree in the forest needs to have
-     */
-    static final int MIN_NODES = 2;
 
     private final Map<E, List<E>> edges;
 
@@ -27,7 +30,7 @@ public class Forest<E> {
      * @param nodes the map for the new forest
      */
     public Forest(Map<E, List<E>> nodes) {
-        this.edges = copyEdges(nodes);
+        this.edges = nodes;
     }
 
     /**
@@ -46,24 +49,20 @@ public class Forest<E> {
         return newEdges;
     }
 
-    private Map<E, List<E>> getMap() {
-        return copyEdges(edges);
-    }
-
     /**
      * Returns List of undirected edges in the Forest.
      *
      * @return the edges of the forest
      */
-    protected List<List<E>> getAdjacencySet() {
-        List<List<E>> adjacencyList = new <>();
+    protected Set<List<E>> getAdjacencySet() {
+        List<List<E>> adjacencyList = new ArrayList<>();
         for (E node : edges.keySet()) {
             //add list of sorted (node, adjacentNode) pairs
             adjacencyList.addAll(edges.get(node).stream()
                     .map((E adjacentNode) -> Stream.of(node, adjacentNode).sorted().collect(Collectors.toList()))
                     .collect(Collectors.toList()));
         }
-        return adjacencySet;
+        return new HashSet<>(adjacencyList);
     }
 
     /**
@@ -72,7 +71,7 @@ public class Forest<E> {
      * @return copy of the forest
      */
     public Forest<E> copy() {
-        return new Forest<>(getMap());
+        return new Forest<>(copyEdges(edges));
     }
 
     /**
@@ -143,10 +142,6 @@ public class Forest<E> {
      * @return true if successfully disconnected, false otherwise
      */
     public boolean disconnect(final E a, final E b) {
-        boolean isLastEdge = edges.containsKey(a) && areAdjacent(a, b) && this.list().size() == MIN_NODES;
-        if (isLastEdge) {
-            return false;
-        }
         return this.remove(a, b);
     }
 
@@ -285,9 +280,9 @@ public class Forest<E> {
         }
         if (areConnected(first, second)) {
             return false;
+            //If first and second are already adjacent, we cannot add a new node. If they aren't, but are connected then
+            //adding an edge without adding a new node creates a loop in a connected subgraph <=> not a tree anymore.
         }
-        //If first and second are already adjacent, we cannot add a new node. If they aren't then
-        //adding an edge without adding a new node creates a loop in a connected subgraph <=> not a tree anymore.
         addOneDirection(first, second);
         return addOneDirection(second, first);
     }
@@ -313,8 +308,8 @@ public class Forest<E> {
         if (!(o instanceof Forest)) return false;
         Forest<?> forest = (Forest<?>) o;
         //we compare the edges, since order of the Edges does not matter.
-        List<List<E>> first = this.getAdjacencySet();
-        List<? extends List<?>> second = forest.getAdjacencySet();
+        Set<List<E>> first = this.getAdjacencySet();
+        Set<? extends List<?>> second = forest.getAdjacencySet();
         return Objects.equals(first, second);
     }
 

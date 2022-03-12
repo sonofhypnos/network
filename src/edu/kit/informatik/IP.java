@@ -1,6 +1,6 @@
 package edu.kit.informatik;
 
-import edu.kit.informatik.resources.ErrorMessages;
+import edu.kit.informatik.resources.Errors;
 import edu.kit.informatik.resources.ParseException;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import static java.util.stream.Collectors.joining;
  * same IPv4 address.
  *
  * @author upkim
- * @version 1.0 2022-03-08 11:52
+ * @version 1.0 2022-03-12 22:13
  */
 public class IP implements Comparable<IP> {
 
@@ -59,7 +59,7 @@ public class IP implements Comparable<IP> {
      */
     public IP(final String pointNotation) throws ParseException {
         if (pointNotation == null) {
-            throw new ParseException(ErrorMessages.IP_IS_NULL);
+            throw new ParseException(Errors.IP_IS_NULL);
         }
         blocks = parseIP(pointNotation);
     }
@@ -72,11 +72,11 @@ public class IP implements Comparable<IP> {
         List<Integer> blocks = new ArrayList<>();
 
         if (!ipMatcher.matches()) {
-            throw new ParseException(ErrorMessages.FORMAT_FOR_AN_IP);
+            throw new ParseException(Errors.FORMAT_FOR_AN_IP);
         }
 
         if (zeroMatcher.find()) {
-            throw new ParseException(ErrorMessages.ERROR_LEADING_ZEROS);
+            throw new ParseException(Errors.ERROR_LEADING_ZEROS);
         }
 
         while (blockMatcher.find()) {
@@ -92,12 +92,12 @@ public class IP implements Comparable<IP> {
             try {
                 blocks.add(parseInt(blockMatcher.group()));
             } catch (NumberFormatException e) {
-                throw new ParseException(ErrorMessages.FORMAT_FOR_AN_IP);
+                throw new ParseException(Errors.FORMAT_FOR_AN_IP);
             }
         }
 
         if (blocks.stream().anyMatch(x -> x > MAX_BLOCK_VALUE)) {
-            throw new ParseException(ErrorMessages.IP_HAS_VALUES_GREATER_THAN_256);
+            throw new ParseException(Errors.IP_HAS_VALUES_GREATER_THAN_256);
         }
 
         return blocks;

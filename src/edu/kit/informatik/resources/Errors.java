@@ -2,10 +2,11 @@ package edu.kit.informatik.resources;
 
 /**
  * Error messages for the Programming Assignment.
+ *
  * @author upkim
- * @version 1.0 2022-03-12 17:58
+ * @version 1.0 2022-03-12 22:12
  */
-public class ErrorMessages {
+public class Errors {
     /**
      * Required prefix for the KIT Programming course Programming Assignments.
      */
@@ -22,13 +23,11 @@ public class ErrorMessages {
     /**
      * ERROR_LEADING_ZEROS is thrown if the String provided to the IP constructor contains leading zeros.
      */
-    public static final String ERROR_LEADING_ZEROS = KIT_ERROR_PREFIX
-                                                     + "the provided string contains leading zeros.";
+    public static final String ERROR_LEADING_ZEROS = KIT_ERROR_PREFIX + "the provided string contains leading zeros.";
     /**
      * FORMAT_FOR_AN_IP is thrown if the String supplied to the IP constructor does not follow the IPv4 format.
      */
-    public static final String FORMAT_FOR_AN_IP = KIT_ERROR_PREFIX
-                                                  + "the provided String does not follow "
+    public static final String FORMAT_FOR_AN_IP = KIT_ERROR_PREFIX + "the provided String does not follow "
                                                   + "the format for an IP.";
     /**
      * ERROR_INVALID_IPS. Thrown if not all ips in the Network could be parsed as valid ips.
@@ -38,7 +37,7 @@ public class ErrorMessages {
      * Thrown if there is not a closing parenthesis for every opening parenthesis.
      */
     public static final String ERROR_BRACKET = KIT_ERROR_PREFIX
-                                                + "there is a parenthesis mismatch in the provided string.";
+                                               + "there is a parenthesis mismatch in the provided string.";
     /**
      * ERROR_NETWORK_STRING_IS_NULL is thrown if the input to the Network constructor is null.
      */
@@ -52,23 +51,25 @@ public class ErrorMessages {
      */
     public static final String ERROR_DUPLICATE_I_PS = KIT_ERROR_PREFIX + "duplicate entries in provided String.";
     /**
-     * ERROR_THERE_ARE_DUPLICATE_CHILDREN iff there are duplicate children in the children list provided to the
-     * Network constructor.
+     * ERROR_THERE_ARE_DUPLICATE_CHILDREN iff there are duplicate children in the children list provided to the Network
+     * constructor.
      */
     public static final String ERROR_THERE_ARE_DUPLICATE_CHILDREN = KIT_ERROR_PREFIX + "there are duplicate children.";
     /**
      * Thrown if input to Network violates rules for a valid forest.
      */
     public static final String ERROR_NOT_A_VALID_FOREST = KIT_ERROR_PREFIX
-                                                           + "network does not describe a valid forest.";
+                                                          + "network does not describe a valid forest.";
     /**
      * ERROR_MINIMUM_OF_1_CONNECTION thrown if the network does not contain a minimum of one connection.
      */
     public static final String ERROR_MINIMUM_OF_1_CONNECTION = KIT_ERROR_PREFIX
-                                                                + "The network must have a minimum of one."
-                                                                + "connection";
+                                                               + "The network must have a minimum of one."
+                                                               + "connection";
     /**
      * ERROR_FOREST_EDGE is thrown if adding an edge would make a forest invalid.
      */
-    public static final String ERROR_FOREST_EDGE = "Error, Adding this edge would add a loop to the forest.";
+
+    private Errors() {
+    }
 }

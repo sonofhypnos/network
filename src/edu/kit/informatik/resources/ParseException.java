@@ -4,7 +4,7 @@ package edu.kit.informatik.resources;
  * Parse exception is thrown if parse-format is violated in any way.
  *
  * @author upkim
- * @version 1.0 2022-03-08 11:52
+ * @version 1.0 2022-03-12 22:13
  */
 public class ParseException extends RuntimeException {
 
