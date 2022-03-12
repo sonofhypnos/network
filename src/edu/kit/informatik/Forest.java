@@ -25,28 +25,19 @@ public class Forest<E> {
     private final Map<E, List<E>> edges;
 
     /**
-     * Instantiates a new Forest.
-     *
-     * @param nodes the map for the new forest
-     */
-    public Forest(Map<E, List<E>> nodes) {
-        this.edges = nodes;
-    }
-
-    /**
      * Instantiates a new Forest object without any Nodes.
      */
     public Forest() {
         this.edges = new HashMap<>();
     }
 
-    private Map<E, List<E>> copyEdges(final Map<E, List<E>> nodes) {
-        HashMap<E, List<E>> newEdges = new HashMap<>();
-        for (E firstNode : nodes.keySet()) {
-            List<E> nextNodes = new ArrayList<>(nodes.get(firstNode));
-            newEdges.put(firstNode, nextNodes);
-        }
-        return newEdges;
+    /**
+     * Instantiates a new Forest from a Map. Only used to copy a Forest.
+     *
+     * @param nodes the map for the new forest
+     */
+    private Forest(Map<E, List<E>> nodes) {
+        this.edges = new HashMap<>(nodes);
     }
 
     /**
@@ -71,7 +62,7 @@ public class Forest<E> {
      * @return copy of the forest
      */
     public Forest<E> copy() {
-        return new Forest<>(copyEdges(edges));
+        return new Forest<>(new HashMap<>(edges));
     }
 
     /**
