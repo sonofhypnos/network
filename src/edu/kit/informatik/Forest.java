@@ -41,7 +41,7 @@ public class Forest<E> {
     }
 
     /**
-     * Returns List of undirected edges in the Forest.
+     * Returns Set of undirected edges in the Forest.
      *
      * @return the edges of the forest
      */
