@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  * The Forest Class contains all functions for a generic Forest, a collection of undirected trees. A valid forest must
  * contain at least one tree.
  *
- * @param <E> type of nodes
+ * @param <E> type of nodes. Is expected to be immutable.
  * @author upkim
  * @version 1.0 2022-03-12 22:13
  */
@@ -45,7 +45,7 @@ public class Forest<E> {
      *
      * @return the edges of the forest
      */
-    protected Set<List<E>> getAdjacencySet() {
+    public Set<List<E>> getAdjacencySet() {
         List<List<E>> adjacencyList = new ArrayList<>();
         for (E node : edges.keySet()) {
             //add list of sorted (node, adjacentNode) pairs
@@ -123,17 +123,6 @@ public class Forest<E> {
 
     private Set<E> getNodes() {
         return edges.keySet();
-    }
-
-    /**
-     * Disconnect boolean. Removes an undirected edge if successful. Guarantees Forest is still a tree.
-     *
-     * @param a first node
-     * @param b second node
-     * @return true if successfully disconnected, false otherwise
-     */
-    public boolean disconnect(final E a, final E b) {
-        return this.remove(a, b);
     }
 
     /**
