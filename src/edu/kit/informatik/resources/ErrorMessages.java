@@ -6,7 +6,7 @@ package edu.kit.informatik.resources;
  * @author upkim
  * @version 1.0 2022-03-12 22:12
  */
-public class Errors {
+public final class ErrorMessages {
     /**
      * Required prefix for the KIT Programming course Programming Assignments.
      */
@@ -66,10 +66,11 @@ public class Errors {
     public static final String ERROR_MINIMUM_OF_1_CONNECTION = KIT_ERROR_PREFIX
                                                                + "The network must have a minimum of one."
                                                                + "connection";
+
     /**
      * ERROR_FOREST_EDGE is thrown if adding an edge would make a forest invalid.
      */
 
-    private Errors() {
+    private ErrorMessages() {
     }
 }

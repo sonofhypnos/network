@@ -1,6 +1,6 @@
 package edu.kit.informatik;
 
-import edu.kit.informatik.resources.Errors;
+import edu.kit.informatik.resources.ErrorMessages;
 import edu.kit.informatik.resources.NetworkException;
 import edu.kit.informatik.resources.ParseException;
 
@@ -43,10 +43,10 @@ public class Network {
      */
     public Network(final IP root, final List<IP> children) {
         if (root == null || children == null || children.contains(root)) {
-            throw new NetworkException(Errors.ERROR_NOT_A_VALID_FOREST);
+            throw new NetworkException(ErrorMessages.ERROR_NOT_A_VALID_FOREST);
         }
         if (children.size() != children.stream().distinct().count()) {
-            throw new NetworkException(Errors.ERROR_THERE_ARE_DUPLICATE_CHILDREN);
+            throw new NetworkException(ErrorMessages.ERROR_THERE_ARE_DUPLICATE_CHILDREN);
         }
         this.graph = new Forest<>();
         for (IP child : children) {
@@ -76,13 +76,13 @@ public class Network {
      */
     private static Forest<IP> parseNetwork(final String bracketNotation, final Forest<IP> graph) throws ParseException {
         if (bracketNotation == null) {
-            throw new ParseException(Errors.ERROR_NETWORK_STRING_IS_NULL);
+            throw new ParseException(ErrorMessages.ERROR_NETWORK_STRING_IS_NULL);
         }
         if (bracketNotation.isEmpty()) {
-            throw new ParseException(Errors.ERROR_NETWORK_STRING_IS_EMPTY);
+            throw new ParseException(ErrorMessages.ERROR_NETWORK_STRING_IS_EMPTY);
         }
         if (!bracketNotation.endsWith(SUFFIX)) {
-            throw new ParseException(Errors.ERROR_NOT_A_VALID_FOREST);
+            throw new ParseException(ErrorMessages.ERROR_NOT_A_VALID_FOREST);
         }
 
         List<String> ips = new ArrayList<>();
@@ -91,15 +91,15 @@ public class Network {
             ips.add(ipMatcher.group());
         }
         if (ips.stream().distinct().count() != ips.size()) {
-            throw new ParseException(Errors.ERROR_DUPLICATE_I_PS);
+            throw new ParseException(ErrorMessages.ERROR_DUPLICATE_I_PS);
         }
         if (ips.size() < MIN_NODES) {
-            throw new ParseException(Errors.ERROR_MINIMUM_OF_1_CONNECTION);
+            throw new ParseException(ErrorMessages.ERROR_MINIMUM_OF_1_CONNECTION);
         }
 
 
         if (!parseNetworkRecursive(bracketNotation, null, graph).equals("")) {
-            throw new ParseException(Errors.ERROR_BRACKET);
+            throw new ParseException(ErrorMessages.ERROR_BRACKET);
         }
         return graph;
     }
@@ -121,7 +121,7 @@ public class Network {
             throws ParseException {
         if (!bracketNotation.startsWith(PREFIX)) {
 
-            throw new ParseException(Errors.ERROR_BRACKET);
+            throw new ParseException(ErrorMessages.ERROR_BRACKET);
         }
 
         String ipString = bracketNotation.substring(PREFIX.length()); //remove prefix
@@ -164,7 +164,7 @@ public class Network {
         try {
             child = new IP(node);
         } catch (ParseException e) {
-            throw new ParseException(Errors.ERROR_INVALID_IPS);
+            throw new ParseException(ErrorMessages.ERROR_INVALID_IPS);
         }
 
         //we catch the ForestException here in order to avoid code duplication of the add-method.
@@ -172,7 +172,7 @@ public class Network {
             return child;
         }
         if (!graph.add(parent, child)) {
-            throw new ParseException(Errors.ERROR_NOT_A_VALID_FOREST);
+            throw new ParseException(ErrorMessages.ERROR_NOT_A_VALID_FOREST);
         }
         return child;
     }
