@@ -1,19 +1,13 @@
 package edu.kit.informatik;
 
-import edu.kit.informatik.resources.ForestException;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- * The Forest Class contains all functions for Forests that aren't specific to the network forest.
+ * The Forest Class contains all functions for a generic Forest, a collection of undirected trees. Every subnetwork of
+ * the forest must have at least two nodes. A valid forest must contain at least one network.
  *
  * @param <E> type of nodes
  * @author upkim
@@ -21,19 +15,18 @@ import java.util.stream.Collectors;
  */
 public class Forest<E> {
     /**
-     * Minimum nodes a forest has to have.
+     * Minimum nodes every tree in the forest needs to have
      */
     static final int MIN_NODES = 2;
-    private static final String ERROR_FOREST_EDGE = "Error, Adding this edge would add a loop to the forest";
 
-    private final HashMap<E, List<E>> edges;
+    private final Map<E, List<E>> edges;
 
     /**
      * Instantiates a new Forest.
      *
      * @param nodes the map for the new forest
      */
-    public Forest(HashMap<E, List<E>> nodes) {
+    public Forest(Map<E, List<E>> nodes) {
         this.edges = copyEdges(nodes);
     }
 
@@ -44,7 +37,7 @@ public class Forest<E> {
         this.edges = new HashMap<>();
     }
 
-    private HashMap<E, List<E>> copyEdges(final HashMap<E, List<E>> nodes) {
+    private Map<E, List<E>> copyEdges(final Map<E, List<E>> nodes) {
         HashMap<E, List<E>> newEdges = new HashMap<>();
         for (E firstNode : nodes.keySet()) {
             List<E> nextNodes = new ArrayList<>(nodes.get(firstNode));
@@ -53,27 +46,28 @@ public class Forest<E> {
         return newEdges;
     }
 
-    private HashMap<E, List<E>> getMap() {
+    private Map<E, List<E>> getMap() {
         return copyEdges(edges);
     }
 
     /**
-     * Returns List of edges in the Forest.
+     * Returns List of undirected edges in the Forest.
      *
      * @return the edges of the forest
      */
-    public List<List<E>> getEdges() {
-        List<List<E>> edges = new ArrayList<>();
-        HashMap<E, List<E>> newMap = getMap();
-        for (E node : newMap.keySet()) {
-            edges.addAll(newMap.get(node).stream().map((E connectedNode) -> List.of(node, connectedNode))
+    protected List<List<E>> getAdjacencySet() {
+        List<List<E>> adjacencyList = new <>();
+        for (E node : edges.keySet()) {
+            //add list of sorted (node, adjacentNode) pairs
+            adjacencyList.addAll(edges.get(node).stream()
+                    .map((E adjacentNode) -> Stream.of(node, adjacentNode).sorted().collect(Collectors.toList()))
                     .collect(Collectors.toList()));
         }
-        return edges;
+        return adjacencySet;
     }
 
     /**
-     * Copies forest.
+     * Copies forest, but does not copy contained nodes. Using this method with mutable nodes is not recommended.
      *
      * @return copy of the forest
      */
@@ -99,10 +93,11 @@ public class Forest<E> {
 
 
     private List<List<E>> getLevelsRecursive(final Set<E> visited, final List<List<E>> levels) {
-        List<E> lastNodes = levels.get(levels.size() - 1);
+        List<E> oldLevel = levels.get(levels.size() - 1);
 
-        List<E> newLevel = lastNodes.stream().flatMap((E x) -> this.edges.get(x).stream()
-                .filter(isChildPredicate(visited))).distinct().sorted().collect(Collectors.toList());
+        //get the next level (all children of oldLevel) by getting all adjacent nodes that are not already visited.
+        List<E> newLevel = oldLevel.stream().flatMap((E x) -> getAdjacent(x).stream().filter(isChildPredicate(visited)))
+                .distinct().sorted().collect(Collectors.toList());
 
         if (newLevel.isEmpty()) {
             return levels;
@@ -128,33 +123,27 @@ public class Forest<E> {
     }
 
     /**
-     * List returns new list of the edges.
+     * List returns new list of the Nodes.
      *
      * @return list of edges
      */
     public List<E> list() {
-        return edges.keySet().stream().sorted().collect(Collectors.toList());
+        return getNodes().stream().sorted().collect(Collectors.toList());
+    }
+
+    private Set<E> getNodes() {
+        return edges.keySet();
     }
 
     /**
-     * Returns nodes connected to this node.
-     *
-     * @param element the element
-     * @return the connected
-     */
-    public List<E> getConnected(final E element) {
-        return getLevels(element).stream().flatMap(List::stream).collect(Collectors.toList());
-    }
-
-    /**
-     * Disconnect boolean. Removes an undirected edge if successful.
+     * Disconnect boolean. Removes an undirected edge if successful. Guarantees Forest is still a tree.
      *
      * @param a first node
      * @param b second node
      * @return true if successfully disconnected, false otherwise
      */
     public boolean disconnect(final E a, final E b) {
-        boolean isLastEdge = this.edges.containsKey(a) && edges.get(a).contains(b) && this.list().size() == MIN_NODES;
+        boolean isLastEdge = edges.containsKey(a) && areAdjacent(a, b) && this.list().size() == MIN_NODES;
         if (isLastEdge) {
             return false;
         }
@@ -162,13 +151,13 @@ public class Forest<E> {
     }
 
     /**
-     * Remove boolean. Adds an edge to the instance if successful.
+     * Remove edges between a graph even if it violates the Guarantees for a Forest.
      *
      * @param a first node
      * @param b second node
      * @return true iff successfully removed.
      */
-    public boolean remove(final E a, final E b) {
+    protected boolean remove(final E a, final E b) {
         removeOneSided(a, b);
         return removeOneSided(b, a);
     }
@@ -182,8 +171,8 @@ public class Forest<E> {
      * @return true iff edge successfully added.
      */
     private boolean removeOneSided(final E a, final E b) {
-        if (edges.containsKey(a) && edges.get(a).remove(b)) {
-            if (edges.get(a).isEmpty()) {
+        if (edges.containsKey(a) && this.edges.get(a).remove(b)) {
+            if (getAdjacent(a).isEmpty()) {
                 edges.remove(a);
             }
             return true;
@@ -192,13 +181,13 @@ public class Forest<E> {
     }
 
     /**
-     * Contains returns true if element in Graph
+     * Contains returns true if element is in the Graph
      *
      * @param element the element
      * @return iff this contains element.
      */
     public boolean contains(final E element) {
-        return this.edges.containsKey(element);
+        return edges.containsKey(element);
     }
 
     /**
@@ -210,9 +199,7 @@ public class Forest<E> {
      * @return the route from start to end
      */
     public List<E> getRoute(final E start, final E end) {
-        boolean connected = getConnected(start).contains(end);
-
-        if (!(this.contains(start) && this.contains(end)) || !connected || start.equals(end)) {
+        if (!(this.contains(start) && this.contains(end)) || !areConnected(start, end) || start.equals(end)) {
             return new ArrayList<>();
         }
         List<List<E>> levels = getLevels(start);
@@ -225,15 +212,17 @@ public class Forest<E> {
         route.add(end);
         E currentNode = end;
         // We track the path backward (from branch to root) through the tree which is easier, since every node is
-        // guaranteed to have one and only one parent.
+        // guaranteed to have one and only one parent
         for (int i = levels.size() - 2; i >= 0; i--) {
-            final E currentNodeCopy = currentNode; //We do this because Java does not support real closures.
-            // The value of currentNode is not allowed to change after being used in the lambda, so we create a final
-            // variable and the compiler stops complaining.
-            List<E> connectedNodes = levels.get(i).stream().filter((E potentialParent) ->
-                    this.get(potentialParent).contains(currentNodeCopy)).collect(Collectors.toList());
-            connectedNodes.retainAll(levels.get(i));
-            E parent = connectedNodes.get(0);
+            final E currentNodeCopy = currentNode; //We make this final copy of the node because Java does not support
+            // real closures: external variables used inside the lambda must be final.
+
+            //We filter the level above currentNode by whether they are adjacent to CurrentNode.
+            List<E> parentList = levels.get(i).stream()
+                    .filter((E potentialParent) -> areAdjacent(potentialParent, currentNodeCopy))
+                    .collect(Collectors.toList());
+            assert parentList.size() == 1;
+            E parent = parentList.get(0);
             route.add(parent);
             currentNode = parent;
         }
@@ -241,23 +230,50 @@ public class Forest<E> {
         return route;
     }
 
+    /**
+     * Returns true iff start and end are connected in the forest.
+     *
+     * @param start the start
+     * @param end   the end
+     * @return the boolean
+     */
+    public boolean areConnected(final E start, final E end) {
+        if (start == null || end == null) {
+            return false;
+        }
+        return getLevels(start).stream().flatMap(List::stream).collect(Collectors.toList()).contains(end);
+    }
 
     /**
-     * Get list of edges adjacent to element.
+     * Returns true iff start and end are adjacent in the forest.
+     *
+     * @param first  the first
+     * @param second the second
+     * @return the boolean
+     */
+    public boolean areAdjacent(final E first, final E second) {
+        if (first == null || second == null) {
+            return false;
+        }
+        return this.getAdjacent(first).contains(second);
+    }
+
+    /**
+     * Get list of edges adjacent to element. Returns empty list if input is null.
      *
      * @param element the element
      * @return adjacent edges
      */
-    public List<E> get(final E element) {
-        assert element != null;
+    public List<E> getAdjacent(final E element) {
         if (edges.get(element) == null) {
-            return new ArrayList<E>();
+            return new ArrayList<>();
         }
         return new ArrayList<>(edges.get(element));
     }
 
     /**
-     * Add edge between first and second to the graph and returns true.
+     * Add edge between first and second to the graph and returns if there was no edge between them before and if it
+     * does not violate the forest format.
      *
      * @param first  the first node
      * @param second the second node
@@ -267,30 +283,21 @@ public class Forest<E> {
         if (first == null || second == null) {
             return false;
         }
-        boolean addsLoop = edges.containsKey(first) && !this.get(first).contains(second)
-                && getConnected(first).contains(second); //a connected node that is not adjacent adds a loop to a graph
-        if (addsLoop) {
-            throw new ForestException(ERROR_FOREST_EDGE);
+        if (areConnected(first, second)) {
+            return false;
         }
+        //If first and second are already adjacent, we cannot add a new node. If they aren't then
+        //adding an edge without adding a new node creates a loop in a connected subgraph <=> not a tree anymore.
         addOneDirection(first, second);
         return addOneDirection(second, first);
     }
 
-    //
-
-    /**
-     * Adds edge to edges in one direction.
-     *
-     * @param first  node
-     * @param second node
-     * @return true iff successfully added edge.
-     */
     private boolean addOneDirection(final E first, final E second) {
         if (edges.containsKey(first)) {
-            final List<E> connectedNodes = edges.get(first);
-            if (!connectedNodes.contains(second)) { //we only want to add the node if it is not already connected.
-                connectedNodes.add(second);
-                edges.put(first, connectedNodes);
+            final List<E> adjacentNodes = getAdjacent(first);
+            if (!adjacentNodes.contains(first)) {
+                adjacentNodes.add(second);
+                edges.put(first, adjacentNodes);
                 return true;
             }
             return false;
@@ -305,21 +312,17 @@ public class Forest<E> {
         if (this == o) return true;
         if (!(o instanceof Forest)) return false;
         Forest<?> forest = (Forest<?>) o;
-        //we compare the sets since order of the Edges does not matter.
-        Set<Set<E>> first = this.getEdgeSets();
-        Set<? extends Set<?>> second = forest.getEdgeSets();
+        //we compare the edges, since order of the Edges does not matter.
+        List<List<E>> first = this.getAdjacencySet();
+        List<? extends List<?>> second = forest.getAdjacencySet();
         return Objects.equals(first, second);
     }
 
 
     @Override
     public int hashCode() {
-        Set<Set<E>> collect = getEdgeSets();
-        return Objects.hash(collect);
+        return Objects.hash(getAdjacencySet());
     }
 
 
-    private Set<Set<E>> getEdgeSets() {
-        return this.getEdges().stream().map(HashSet::new).collect(Collectors.toSet());
-    }
 }

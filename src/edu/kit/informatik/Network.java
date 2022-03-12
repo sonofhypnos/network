@@ -1,13 +1,10 @@
 package edu.kit.informatik;
 
-import edu.kit.informatik.resources.ForestException;
+import edu.kit.informatik.resources.ErrorMessages;
 import edu.kit.informatik.resources.NetworkException;
 import edu.kit.informatik.resources.ParseException;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,35 +21,26 @@ public class Network {
     private static final String SEPARATION_STRING = " ";
     private static final String PREFIX = "(";
     private static final String SUFFIX = ")";
-    private static final int SEP_NUMBER = 2; //2 instead of 1 for reasonable behaviour by the split method
+    private static final int SPLIT_LIMIT = 2; //split applies pattern 'limit-1' times, so we use 2 to apply it once.
     private static final String EMPTY_STRING = "";
-    private static final String SUFFIX_REGEX = "\\)";
 
     //Error Messages
-    private static final String ERROR_INVALID_IPS = "Error, network contains invalid ips";
-    private static final String ERROR_BRACKET = "Error, there is a parenthesis mismatch in the provided string.";
-    private static final String ERROR_NETWORK_STRING_IS_NULL = "Error, network string is null.";
-    private static final String ERROR_NETWORK_STRING_IS_EMPTY = "Error, network string is empty.";
-    private static final String ERROR_DUPLICATE_I_PS = "Error, duplicate entries in provided String.";
-    private static final String ERROR_THERE_ARE_DUPLICATE_CHILDREN = "Error, there are duplicate children.";
-    private static final String ERROR_NOT_A_VALID_FOREST = "Error, network does not describe a valid forest.";
-    private static final String ERROR_MINIMUM_OF_1_CONNECTION = "Error, The network must have a minimum of one "
-            + "connection";
-
     private Forest<IP> graph;
+    private static final String SUFFIX_REGEX = "\\)";
+
 
     /**
-     * Instantiates a new Network.
+     * Instantiates a new Network with edges added between children and root. Throws
      *
      * @param root     the root
      * @param children the children
      */
     public Network(final IP root, final List<IP> children) {
         if (root == null || children == null || children.contains(root)) {
-            throw new NetworkException(ERROR_NOT_A_VALID_FOREST);
+            throw new NetworkException(ErrorMessages.ERROR_NOT_A_VALID_FOREST);
         }
         if (children.size() != children.stream().distinct().count()) {
-            throw new NetworkException(ERROR_THERE_ARE_DUPLICATE_CHILDREN);
+            throw new NetworkException(ErrorMessages.ERROR_THERE_ARE_DUPLICATE_CHILDREN);
         }
         this.graph = new Forest<>();
         for (IP child : children) {
@@ -82,13 +70,13 @@ public class Network {
      */
     private static Forest<IP> parseNetwork(final String bracketNotation, final Forest<IP> graph) throws ParseException {
         if (bracketNotation == null) {
-            throw new ParseException(ERROR_NETWORK_STRING_IS_NULL);
+            throw new ParseException(ErrorMessages.ERROR_NETWORK_STRING_IS_NULL);
         }
-        if (bracketNotation.equals("")) {
-            throw new ParseException(ERROR_NETWORK_STRING_IS_EMPTY);
+        if (bracketNotation.isEmpty()) {
+            throw new ParseException(ErrorMessages.ERROR_NETWORK_STRING_IS_EMPTY);
         }
         if (!bracketNotation.endsWith(SUFFIX)) {
-            throw new ParseException(ERROR_NOT_A_VALID_FOREST);
+            throw new ParseException(ErrorMessages.ERROR_NOT_A_VALID_FOREST);
         }
 
         List<String> ips = new ArrayList<>();
@@ -97,15 +85,15 @@ public class Network {
             ips.add(ipMatcher.group());
         }
         if (ips.stream().distinct().count() != ips.size()) {
-            throw new ParseException(ERROR_DUPLICATE_I_PS);
+            throw new ParseException(ErrorMessages.ERROR_DUPLICATE_I_PS);
         }
         if (ips.size() < Forest.MIN_NODES) {
-            throw new ParseException(ERROR_MINIMUM_OF_1_CONNECTION);
+            throw new ParseException(ErrorMessages.ERROR_MINIMUM_OF_1_CONNECTION);
         }
 
 
         if (!parseNetworkRecursive(bracketNotation, null, graph).equals("")) {
-            throw new ParseException(ERROR_BRACKET);
+            throw new ParseException(ErrorMessages.ERROR_BRACKET);
         }
         return graph;
     }
@@ -113,9 +101,9 @@ public class Network {
     /**
      * Parse network string. Modifies the input-graph, to simplify the recursive calls.
      * <p>
-     * Separates entries by separation string. Sets first entry as root and adds connections between children and
-     * root afterwards, calls itself recursively if entry starts with "prefix" and returns when finding "suffix",
-     * so that the remaining string can be handled by calling function.
+     * Separates entries by separation string. Sets first entry as root and adds connections between children and root
+     * afterwards, calls itself recursively if entry starts with "prefix" and returns when finding "suffix", so that the
+     * remaining string can be handled by calling function.
      *
      * @param bracketNotation Remaining Input to be parsed
      * @param parent          the parent
@@ -127,19 +115,18 @@ public class Network {
             throws ParseException {
         if (!bracketNotation.startsWith(PREFIX)) {
 
-            throw new ParseException(ERROR_BRACKET);
+            throw new ParseException(ErrorMessages.ERROR_BRACKET);
         }
 
         String ipString = bracketNotation.substring(PREFIX.length()); //remove prefix
         IP root = null;
 
         while (ipString.contains(SEPARATION_STRING)) {
-            String[] separatedString = ipString.split(SEPARATION_STRING, SEP_NUMBER);
+            String[] separatedString = ipString.split(SEPARATION_STRING, SPLIT_LIMIT);
             String node = separatedString[0];
             ipString = separatedString[1];
 
-            if (root == null)
-                root = addChild(graph, parent, node);
+            if (root == null) root = addChild(graph, parent, node);
 
             else if (node.startsWith(PREFIX))
                 ipString = parseNetworkRecursive(node + SEPARATION_STRING + ipString, root, graph);
@@ -157,7 +144,7 @@ public class Network {
     private static String parseLast(final Forest<IP> graph, final String ipString, final IP root)
             throws ParseException {
         String node;
-        String[] separatedSuffix = ipString.split(SUFFIX_REGEX, SEP_NUMBER);
+        String[] separatedSuffix = ipString.split(SUFFIX_REGEX, SPLIT_LIMIT);
         node = separatedSuffix[0];
         String newString = separatedSuffix[1];
         if (!node.equals(EMPTY_STRING)) {
@@ -171,15 +158,16 @@ public class Network {
         try {
             child = new IP(node);
         } catch (ParseException e) {
-            throw new ParseException(ERROR_INVALID_IPS);
+            throw new ParseException(ErrorMessages.ERROR_INVALID_IPS);
         }
 
-        try {
-            graph.add(child, root);
-        } catch (ForestException e) {
-            throw new ParseException(ERROR_NOT_A_VALID_FOREST);
+        //we catch the ForestException here in order to avoid code duplication of the add-method.
+        if (parent == null) {
+            return child;
         }
-        return child;
+        if (!graph.add(parent, child)) {
+            throw new ParseException(ErrorMessages.ERROR_NOT_A_VALID_FOREST);
+        } return child;
     }
 
 
@@ -194,13 +182,15 @@ public class Network {
             return false;
         }
         Forest<IP> newGraph = this.graph.copy();
-        List<List<IP>> newEdges = subnet.graph.getEdges();
-        for (List<IP> edge : newEdges) {
-            try {
-                newGraph.add(edge.get(0), edge.get(1));
-            } catch (ForestException e) {
+        Set<Set<E>> newEdges = subnet.graph.getAdjacencySet();
+        for (Set<E> edge : newEdges) {
+            final E first = edge.get(0);
+            final E second = edge.get(1);
+            final boolean addsLoop = !graph.areAdjacent(first, second) && graph.areConnected(first, second);
+            if (addsLoop) {
                 return false;
             }
+            newGraph.add(first, second);
         }
         if (this.graph.equals(newGraph)) {
             return false;
@@ -219,7 +209,8 @@ public class Network {
     }
 
     /**
-     * Add connection between two ips. Returns true on success, false otherwise.
+     * Add connection between two ips. Returns true iff the two ips were not adjacent, existent in the network and the
+     * network is afterwards still a valid tree topology.
      *
      * @param ip1 the ip 1
      * @param ip2 the ip 2
@@ -229,15 +220,12 @@ public class Network {
         if (ip1 == null || ip2 == null || ip1.equals(ip2) || !(this.graph.contains(ip1) && this.graph.contains(ip2))) {
             return false;
         }
-        try {
-            return this.graph.add(ip1, ip2);
-        } catch (ForestException e) {
-            return false;
-        }
+        return this.graph.add(ip1, ip2);
     }
 
     /**
-     * Disconnect two ips. Returns on success false otherwise.
+     * Disconnect two ips. Returns true iff the two ips were previously in network adjacent and removes edge between
+     * them, unless the Network would afterwards not describe a valid Forest.
      *
      * @param ip1 the ip 1
      * @param ip2 the ip 2
@@ -309,7 +297,7 @@ public class Network {
 
 
     /**
-     * To string string.
+     * Returns String format for Network in lisplike-notation for the Tree belonging to Network.
      *
      * @param root the root
      * @return the string
@@ -323,13 +311,13 @@ public class Network {
     }
 
     private String toStringRecursive(final IP root, final Forest<IP> newGraph) {
-        if (newGraph.get(root).size() == 0) {
+        if (newGraph.getAdjacent(root).size() == 0) {
             return root.toString();
         }
         List<String> ipStrings = new ArrayList<>();
         ipStrings.add(root.toString());
 
-        List<IP> children = newGraph.get(root);
+        List<IP> children = newGraph.getAdjacent(root);
         Collections.sort(children);
 
         for (IP child : children) {
