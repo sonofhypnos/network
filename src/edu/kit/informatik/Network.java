@@ -187,7 +187,7 @@ public class Network {
         for (List<IP> edge : newEdges) {
             final IP first = edge.get(0);
             final IP second = edge.get(1);
-            final boolean addsLoop = !newGraph.areAdjacent(first, second) && graph.areConnected(first, second);
+            final boolean addsLoop = !newGraph.areAdjacent(first, second) && newGraph.areConnected(first, second);
             //adding an edge between to connected nodes adds a second path between the two
             // ==> a loop <==> not a tree anymore.
             if (addsLoop) {
