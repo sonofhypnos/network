@@ -22,7 +22,19 @@ import java.util.stream.Stream;
 public class Forest<E> {
 
     private static final int PARENT_PER_CHILD = 1;
+    /**
+     * The Edge-map. Maps each node to a Set of Nodes that it shares an Edge with. I used Hashsets/Sets instead of
+     * ArrayLists/Lists so in theory it works graciously even if the Set is really large. For small entries both should
+     * work fine.
+     */
     private final Map<E, Set<E>> edges;
+
+    /**
+     * Instantiates a new Forest object without any Nodes.
+     */
+    public Forest() {
+        this.edges = new HashMap<>();
+    }
 
     /**
      * Instantiates a new Forest from Map (only used for copying).
@@ -31,13 +43,6 @@ public class Forest<E> {
      */
     private Forest(final Map<E, Set<E>> nodes) {
         this.edges = copyEdges(nodes);
-    }
-
-    /**
-     * Instantiates a new Forest object without any Nodes.
-     */
-    public Forest() {
-        this.edges = new HashMap<>();
     }
 
     private Map<E, Set<E>> copyEdges(final Map<E, Set<E>> nodes) {
@@ -122,7 +127,7 @@ public class Forest<E> {
     }
 
     /**
-     * List returns new list of the Nodes.
+     * List returns new sorted list of the Nodes.
      *
      * @return list of edges
      */
@@ -135,7 +140,7 @@ public class Forest<E> {
     }
 
     /**
-     * Remove edges between a graph even if it violates the Guarantees for a Forest.
+     * Remove edges between two nodes.
      *
      * @param a first node
      * @param b second node
@@ -148,7 +153,7 @@ public class Forest<E> {
 
 
     /**
-     * Removes edge one entry in the edgeMap if successful.
+     * Removes edge between to nodes in the edgeMap if successful.
      *
      * @param a from edge
      * @param b to edge
@@ -189,22 +194,23 @@ public class Forest<E> {
         List<List<E>> levels = getLevels(start);
         // Since graph is a tree, the "end"-node only has one parent, which must be on the level above "end" in the
         // tree. We therefore find the route by going through the lineage of "end's" ancestors.
-        while (!levels.get(levels.size() - 1).contains(end)) {
-            levels.remove(levels.size() - 1);
+        //First we find the level of the end node:
+        int endLevel = levels.size() - 1;
+        while (!levels.get(endLevel).contains(end)) {
+            endLevel--;
         }
         List<E> route = new ArrayList<>();
         route.add(end);
         E currentNode = end;
+        final int endParentLevel = endLevel - 1; //we need to reduce by one again since we want to find the parent
+        // above end in the Tree.
         // We track the path backward (from branch to root) through the tree which is easier, since every node is
         // guaranteed to have one and only one parent
-        final int endLevel = levels.size() - 1; //we need to reduce by one since it is 0 indexed.
-        final int parentLevel = endLevel - 1; //we need to reduce by one again since we start 'above' end in the Tree
-        for (int i = parentLevel; i >= 0; i--) {
-            // the tree
+        for (int i = endParentLevel; i >= 0; i--) {
             final E currentNodeCopy = currentNode; //We make this final copy of the node because Java does not support
             // real closures: external variables used inside the lambda must be final.
 
-            //We filter the level above currentNode by whether they are adjacent to CurrentNode.
+            //We filter the level above currentNode by whether they are adjacent to currentNode.
             List<E> parentList = levels.get(i).stream()
                     .filter((E potentialParent) -> areAdjacent(potentialParent, currentNodeCopy))
                     .collect(Collectors.toList());
@@ -273,7 +279,7 @@ public class Forest<E> {
         if (areConnected(first, second)) {
             return false;
             //If first and second are already adjacent, we cannot add a new node. If they aren't, but are connected then
-            //adding an edge without adding a new node creates a loop in a connected subgraph <=> not a tree anymore.
+            //adding an edge without adding a new node creates a loop in the connected subgraph <=> not a tree anymore.
         }
         addOneDirection(first, second);
         return addOneDirection(second, first);
@@ -282,12 +288,8 @@ public class Forest<E> {
     private boolean addOneDirection(final E first, final E second) {
         if (edges.containsKey(first)) {
             final Set<E> adjacentNodes = getAdjacent(first);
-            if (!adjacentNodes.contains(first)) {
-                adjacentNodes.add(second);
-                edges.put(first, adjacentNodes);
-                return true;
-            }
-            return false;
+            edges.put(first, adjacentNodes);
+            return adjacentNodes.add(second);
         } else {
             edges.put(first, new HashSet<>(Set.of(second)));
             return true;
