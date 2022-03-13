@@ -13,8 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * The Forest Class contains all functions for a generic Forest, a collection of undirected trees. A valid forest must
- * contain at least one tree.
+ * The Forest Class contains all functions for a generic Forest, a collection of undirected trees.
  *
  * @param <E> type of nodes. Is expected to be immutable.
  * @author upkim
@@ -29,7 +28,7 @@ public class Forest<E> {
      *
      * @param nodes the map for the new forest
      */
-    private Forest(Map<E, List<E>> nodes) {
+    private Forest(final Map<E, List<E>> nodes) {
         this.edges = copyEdges(nodes);
     }
 
@@ -141,7 +140,7 @@ public class Forest<E> {
      * @param b second node
      * @return true iff successfully removed.
      */
-    protected boolean remove(final E a, final E b) {
+    public boolean remove(final E a, final E b) {
         removeOneSided(a, b);
         return removeOneSided(b, a);
     }

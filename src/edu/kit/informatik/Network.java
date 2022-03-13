@@ -36,10 +36,11 @@ public class Network {
 
 
     /**
-     * Instantiates a new Network with edges added between children and root. Throws
+     * Instantiates a new Network with edges added between children and root.
      *
      * @param root     the root
      * @param children the children
+     * @throws NetworkException if the input network does not describe a valid network.
      */
     public Network(final IP root, final List<IP> children) {
         if (root == null || children == null || children.contains(root)) {
@@ -56,7 +57,8 @@ public class Network {
 
 
     /**
-     * Instantiates a new Network.
+     * Instantiates a new Network. Throws ParseException if the input does not follow the bracketFormat or does not
+     * describe a valid Network.
      *
      * @param bracketNotation the bracket notation
      * @throws ParseException the parse exception
@@ -66,14 +68,6 @@ public class Network {
         this.graph = parseNetwork(bracketNotation, graph);
     }
 
-    /**
-     * Parse network tree node.
-     *
-     * @param bracketNotation the bracket notation
-     * @param graph           adds Edges from bracket-notation to the graph
-     * @return the tree node
-     * @throws ParseException if bracketNotation does not describe a valid Forest
-     */
     private static Forest<IP> parseNetwork(final String bracketNotation, final Forest<IP> graph) throws ParseException {
         if (bracketNotation == null) {
             throw new ParseException(ErrorMessages.ERROR_NETWORK_STRING_IS_NULL);
