@@ -22,14 +22,14 @@ import java.util.stream.Stream;
 public class Forest<E> {
 
     private static final int PARENT_PER_CHILD = 1;
-    private final Map<E, List<E>> edges;
+    private final Map<E, Set<E>> edges;
 
     /**
      * Instantiates a new Forest from Map (only used for copying).
      *
      * @param nodes the map for the new forest
      */
-    private Forest(final Map<E, List<E>> nodes) {
+    private Forest(final Map<E, Set<E>> nodes) {
         this.edges = copyEdges(nodes);
     }
 
@@ -40,10 +40,10 @@ public class Forest<E> {
         this.edges = new HashMap<>();
     }
 
-    private Map<E, List<E>> copyEdges(final Map<E, List<E>> nodes) {
-        HashMap<E, List<E>> newEdges = new HashMap<>();
+    private Map<E, Set<E>> copyEdges(final Map<E, Set<E>> nodes) {
+        HashMap<E, Set<E>> newEdges = new HashMap<>();
         for (E firstNode : nodes.keySet()) {
-            List<E> nextNodes = new ArrayList<>(nodes.get(firstNode));
+            Set<E> nextNodes = new HashSet<>(nodes.get(firstNode));
             newEdges.put(firstNode, nextNodes);
         }
         return newEdges;
@@ -251,11 +251,11 @@ public class Forest<E> {
      * @param element the element
      * @return adjacent edges
      */
-    public List<E> getAdjacent(final E element) {
+    public Set<E> getAdjacent(final E element) {
         if (edges.get(element) == null) {
-            return new ArrayList<>();
+            return new HashSet<>();
         }
-        return new ArrayList<>(edges.get(element));
+        return new HashSet<>(edges.get(element));
     }
 
     /**
@@ -281,7 +281,7 @@ public class Forest<E> {
 
     private boolean addOneDirection(final E first, final E second) {
         if (edges.containsKey(first)) {
-            final List<E> adjacentNodes = getAdjacent(first);
+            final Set<E> adjacentNodes = getAdjacent(first);
             if (!adjacentNodes.contains(first)) {
                 adjacentNodes.add(second);
                 edges.put(first, adjacentNodes);
@@ -289,7 +289,7 @@ public class Forest<E> {
             }
             return false;
         } else {
-            edges.put(first, new ArrayList<>(List.of(second)));
+            edges.put(first, new HashSet<>(Set.of(second)));
             return true;
         }
     }

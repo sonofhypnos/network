@@ -325,7 +325,7 @@ public class Network {
         List<String> ipStrings = new ArrayList<>();
         ipStrings.add(root.toString());
 
-        List<IP> children = newGraph.getAdjacent(root);
+        List<IP> children = new ArrayList<>(newGraph.getAdjacent(root));
         Collections.sort(children);
 
         for (IP child : children) {
