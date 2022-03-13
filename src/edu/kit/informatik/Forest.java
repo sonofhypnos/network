@@ -21,6 +21,7 @@ import java.util.stream.Stream;
  */
 public class Forest<E> {
 
+    private static final int PARENT_PER_CHILD = 1;
     private final Map<E, List<E>> edges;
 
     /**
@@ -196,7 +197,9 @@ public class Forest<E> {
         E currentNode = end;
         // We track the path backward (from branch to root) through the tree which is easier, since every node is
         // guaranteed to have one and only one parent
-        for (int i = levels.size() - 2; i >= 0; i--) {
+        final int parentLevel = levels.size() - 1; //we need to reduce by one since it is 0 indexed.
+        for (int i =  parentLevel - 1; i >= 0; i--) { //we need to reduce by one again since we start 'above' end in
+            // the tree
             final E currentNodeCopy = currentNode; //We make this final copy of the node because Java does not support
             // real closures: external variables used inside the lambda must be final.
 
@@ -204,7 +207,7 @@ public class Forest<E> {
             List<E> parentList = levels.get(i).stream()
                     .filter((E potentialParent) -> areAdjacent(potentialParent, currentNodeCopy))
                     .collect(Collectors.toList());
-            assert parentList.size() == 1;
+            assert parentList.size() == PARENT_PER_CHILD;
             E parent = parentList.get(0);
             route.add(parent);
             currentNode = parent;
