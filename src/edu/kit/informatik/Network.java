@@ -304,8 +304,8 @@ public class Network {
 
 
     /**
-     * Returns String format for Network in parenthesis-notation for the Tree with the variable root as the root of
-     * the tree belonging to the Network.
+     * Returns String format for Network in parenthesis-notation for the Tree with the variable root as the root of the
+     * tree belonging to the Network.
      *
      * @param root the root
      * @return the string

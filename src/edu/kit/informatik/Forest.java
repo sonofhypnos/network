@@ -197,8 +197,9 @@ public class Forest<E> {
         E currentNode = end;
         // We track the path backward (from branch to root) through the tree which is easier, since every node is
         // guaranteed to have one and only one parent
-        final int parentLevel = levels.size() - 1; //we need to reduce by one since it is 0 indexed.
-        for (int i =  parentLevel - 1; i >= 0; i--) { //we need to reduce by one again since we start 'above' end in
+        final int endLevel = levels.size() - 1; //we need to reduce by one since it is 0 indexed.
+        final int parentLevel = endLevel - 1; //we need to reduce by one again since we start 'above' end in the Tree
+        for (int i = parentLevel; i >= 0; i--) {
             // the tree
             final E currentNodeCopy = currentNode; //We make this final copy of the node because Java does not support
             // real closures: external variables used inside the lambda must be final.
