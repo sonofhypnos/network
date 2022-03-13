@@ -16,7 +16,7 @@ import static edu.kit.informatik.IP.REGEX_IP;
 
 /**
  * The Network class. Implements all functions from the assignment. Most graph functionality is implemented in the
- * Forest class while this class handles parsing, printing and throwing Exceptions.
+ * Forest class while this class handles parsing, toString and throwing Exceptions.
  *
  * @author upkim
  * @version 1.0 2022-03-12 22:13
