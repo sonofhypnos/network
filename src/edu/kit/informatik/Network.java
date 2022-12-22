@@ -59,6 +59,11 @@ public class Network {
     /**
      * Instantiates a new Network. Throws ParseException if the input does not follow the bracketFormat or does not
      * describe a valid Network.
+     * Examples of a valid Network descriptions:
+     * (85.193.148.81 141.255.1.133 34.49.145.239 231.189.0.127)
+     *
+     * (85.193.148.81 (141.255.1.133 122.117.67.158 0.146.197.108) 34.49.145.239
+     * (231.189.0.127 77.135.84.171 39.20.222.120 252.29.23.0 116.132.83.77))
      *
      * @param bracketNotation the bracket notation
      * @throws ParseException the parse exception
