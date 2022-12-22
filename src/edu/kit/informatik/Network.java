@@ -188,7 +188,7 @@ public class Network {
             final IP first = edge.get(0);
             final IP second = edge.get(1);
             final boolean addsLoop = !newGraph.areAdjacent(first, second) && newGraph.areConnected(first, second);
-            //adding an edge between to connected nodes adds a second path between the two
+            //adding an edge between two connected nodes adds a second path between the two
             // ==> a loop <==> not a tree anymore.
             if (addsLoop) {
                 return false;
@@ -212,8 +212,8 @@ public class Network {
     }
 
     /**
-     * Add connection between two ips. Returns true iff the two ips were not adjacent, existent in the network and the
-     * network is afterwards still a valid Network.t
+     * Add connection between two ips. Returns true iff the two ips were not adjacent, existent in the network, and the
+     * network is afterwards still a valid Network.
      *
      * @param ip1 the ip 1
      * @param ip2 the ip 2

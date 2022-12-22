@@ -82,9 +82,9 @@ public class IP implements Comparable<IP> {
         while (blockMatcher.find()) {
             /*The following try catch block is actually superfluous with the current parameters: Because of the regex
             checks before, our values are guaranteed to fit into int, because the block are only up to 4 digits long
-            (10^4 < 2^31) but we added it nonetheless, because the Programmieren Wiki mentions that
+            (10^4 < 2^31) but we added it nonetheless, because the Programming Wiki mentions that
              (https://ilias.studium.kit.edu/goto.php?target=wiki_1617287_parseInt)
-            not checking for this exception will lead to point reduction and leaves it ambigous whether checking
+            not checking for this exception will lead to point reduction and leaves it ambiguous whether checking
              the validity of the input through other means is also valid. One might plausibly also choose a
             different value b for block length such that 10^b > 2^31 which would allow this exception to be
             thrown.
